@@ -77,7 +77,7 @@ def imshow_to_buf(x, scale01=False):
 def origin_to_chrs(target):
     results = []
     for t in target:
-        idx = t - 1 if t - 1 >= 0 else 0
+        idx = t - 1 if t >= 1 else 0
         if idx < len(global_data.idx2chr):
             results.append(global_data.idx2chr[idx])
         else:

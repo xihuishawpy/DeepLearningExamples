@@ -69,10 +69,10 @@ class FastSpeechTRTInferencer(TRTInferencer):
                 engine = runtime.deserialize_cuda_engine(engine_str)
 
         if engine:
-            tprint('TRT Engine Loaded from {} successfully.'.format(self.trt_file_path))
+            tprint(f'TRT Engine Loaded from {self.trt_file_path} successfully.')
             return engine
         else:
-            tprint('Loading TRT Engine from {} failed.'.format(self.trt_file_path))
+            tprint(f'Loading TRT Engine from {self.trt_file_path} failed.')
 
         tprint('Building a TRT Engine..')
 
@@ -81,7 +81,7 @@ class FastSpeechTRTInferencer(TRTInferencer):
         if self.trt_file_path:
             with open(self.trt_file_path, 'wb') as f:
                 f.write(engine.serialize())
-            tprint('TRT Engine Saved in {}.'.format(self.trt_file_path))
+            tprint(f'TRT Engine Saved in {self.trt_file_path}.')
 
         return engine
 
@@ -124,10 +124,10 @@ class FastSpeechTRTInferencer(TRTInferencer):
         # TODO: process word emb in TRT if the API allows.
         with torch.no_grad():
             text_encoded = self.model.word_emb(text_encoded)
-        
+
         if self.use_fp16:
             text_encoded = text_encoded.half()
-            
+
         # create input/output buffers
         input_buffers = common.create_inputs_from_torch(self.engine, [text_encoded, text_mask])
         output_buffers = common.create_outputs_from_torch(self.engine)
@@ -140,10 +140,11 @@ class FastSpeechTRTInferencer(TRTInferencer):
         # self.context.execute(batch_size=self.batch_size, bindings=bindings)
         stream.synchronize()
 
-        outputs = dict()
-        outputs['mel'] = output_buffers[-2]
-        outputs['mel_mask'] = output_buffers[-1]
-        outputs['text'] = inputs["text_norm"]
+        outputs = {
+            'mel': output_buffers[-2],
+            'mel_mask': output_buffers[-1],
+            'text': inputs["text_norm"],
+        }
 
         # activations for verifying accuracy.
         if acts is not None:
@@ -194,23 +195,26 @@ class FastSpeechTRTInferencer(TRTInferencer):
 
         if self.validate_accuracy:
             self.add_activation_as_output(network, out_seq, "act.phoneme_side.add_pos_enc")
-        
+
         for layer_idx in range(self.model.phoneme_side_n_layer):
-            out_seq = self.populate_fft(name='phoneme_side.layer_stack.{}'.format(layer_idx),
-                                        network=network,
-                                        weights=weights,
-                                        seq_tensor=out_seq,
-                                        seq_mask_tensor=out_seq_mask,
-                                        batch_size=self.batch_size,
-                                        max_seq_len=trt_max_input_seq_len,
-                                        d_model=d_model,
-                                        n_heads=self.model.phoneme_side_head,
-                                        d_k=self.model.phoneme_side.d_k,
-                                        d_v=self.model.phoneme_side.d_v,
-                                        self_attn_temp=self.model.phoneme_side.d_k**0.5,
-                                        conv_filter_size=self.model.phoneme_side_conv1d_filter_size,
-                                        conv_kernel_size=self.model.fft_conv1d_kernel,
-                                        conv_padding=self.model.fft_conv1d_padding)
+            out_seq = self.populate_fft(
+                name=f'phoneme_side.layer_stack.{layer_idx}',
+                network=network,
+                weights=weights,
+                seq_tensor=out_seq,
+                seq_mask_tensor=out_seq_mask,
+                batch_size=self.batch_size,
+                max_seq_len=trt_max_input_seq_len,
+                d_model=d_model,
+                n_heads=self.model.phoneme_side_head,
+                d_k=self.model.phoneme_side.d_k,
+                d_v=self.model.phoneme_side.d_v,
+                self_attn_temp=self.model.phoneme_side.d_k**0.5,
+                conv_filter_size=self.model.phoneme_side_conv1d_filter_size,
+                conv_kernel_size=self.model.fft_conv1d_kernel,
+                conv_padding=self.model.fft_conv1d_padding,
+            )
+
 
         if self.validate_accuracy:
             self.add_activation_as_output(network, out_seq, "act.phoneme_side.seq")
@@ -253,21 +257,24 @@ class FastSpeechTRTInferencer(TRTInferencer):
             self.add_activation_as_output(network, out_seq, "act.mel_side.add_pos_enc")
 
         for layer_idx in range(self.model.mel_side_n_layer):
-            out_seq = self.populate_fft(name="mel_side.layer_stack.{}".format(layer_idx),
-                                        network=network,
-                                        weights=weights,
-                                        seq_tensor=out_seq,
-                                        seq_mask_tensor=out_seq_mask,
-                                        batch_size=self.batch_size,
-                                        max_seq_len=trt_max_output_seq_len,
-                                        d_model=d_model,
-                                        n_heads=self.model.mel_side_head,
-                                        d_k=self.model.mel_side.d_k,
-                                        d_v=self.model.mel_side.d_v,
-                                        self_attn_temp=self.model.mel_side.d_k**0.5,
-                                        conv_filter_size=self.model.mel_side_conv1d_filter_size,
-                                        conv_kernel_size=self.model.fft_conv1d_kernel,
-                                        conv_padding=self.model.fft_conv1d_padding)
+            out_seq = self.populate_fft(
+                name=f"mel_side.layer_stack.{layer_idx}",
+                network=network,
+                weights=weights,
+                seq_tensor=out_seq,
+                seq_mask_tensor=out_seq_mask,
+                batch_size=self.batch_size,
+                max_seq_len=trt_max_output_seq_len,
+                d_model=d_model,
+                n_heads=self.model.mel_side_head,
+                d_k=self.model.mel_side.d_k,
+                d_v=self.model.mel_side.d_v,
+                self_attn_temp=self.model.mel_side.d_k**0.5,
+                conv_filter_size=self.model.mel_side_conv1d_filter_size,
+                conv_kernel_size=self.model.fft_conv1d_kernel,
+                conv_padding=self.model.fft_conv1d_padding,
+            )
+
 
         if self.validate_accuracy:
             self.add_activation_as_output(network, out_seq, "act.mel_side.seq")
@@ -316,8 +323,20 @@ class FastSpeechTRTInferencer(TRTInferencer):
                      max_seq_len, d_model, n_heads, d_k, d_v, self_attn_temp,
                      conv_filter_size, conv_kernel_size, conv_padding):
         # Self attn
-        out = self.populate_slf_attn("{}.slf_attn".format(name), network, weights, seq_tensor, seq_mask_tensor, batch_size,
-                                     max_seq_len, d_model, n_heads, d_k, d_v)  # (b, t, d_model)
+        out = self.populate_slf_attn(
+            f"{name}.slf_attn",
+            network,
+            weights,
+            seq_tensor,
+            seq_mask_tensor,
+            batch_size,
+            max_seq_len,
+            d_model,
+            n_heads,
+            d_k,
+            d_v,
+        )
+
 
         # Masking
         zeros = network.add_constant(weights=Weights(
@@ -325,21 +344,31 @@ class FastSpeechTRTInferencer(TRTInferencer):
             shape=(batch_size, max_seq_len, 1))  # (b, t, 1)
         out_zeros = zeros.get_output(0)  # (b, t, 1)
         seq = network.add_select(condition=seq_mask_tensor, then_input=out, else_input=out_zeros)
-        seq.name = "{}.mask1".format(name)
+        seq.name = f"{name}.mask1"
         out = seq.get_output(0)  # (b, t, d_model)
 
         # Position-wise
-        out = self.populate_pos_wise("{}.pos_ffn".format(name), network, weights, out,
-                          batch_size, max_seq_len, d_model,
-                          conv_filter_size, conv_kernel_size, conv_padding)  # (b, t, d_model)
+        out = self.populate_pos_wise(
+            f"{name}.pos_ffn",
+            network,
+            weights,
+            out,
+            batch_size,
+            max_seq_len,
+            d_model,
+            conv_filter_size,
+            conv_kernel_size,
+            conv_padding,
+        )
+
 
         # Masking
         seq = network.add_select(condition=seq_mask_tensor, then_input=out, else_input=out_zeros)
-        seq.name = "{}.mask2".format(name)
+        seq.name = f"{name}.mask2"
         out = seq.get_output(0)  # (b, t, d_model)
 
         if self.validate_accuracy:
-            self.add_activation_as_output(network, out, "act.{}".format(name))
+            self.add_activation_as_output(network, out, f"act.{name}")
 
         return out
 

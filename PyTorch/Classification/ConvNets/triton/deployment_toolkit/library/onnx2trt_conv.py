@@ -104,7 +104,7 @@ def onnx2trt(
 
         # optimization
         config = builder.create_builder_config()
-        config.flags |= bool(fp16_mode) << int(trt.BuilderFlag.FP16)
+        config.flags |= fp16_mode << int(trt.BuilderFlag.FP16)
         config.max_workspace_size = max_workspace_size
 
         profile = builder.create_optimization_profile()

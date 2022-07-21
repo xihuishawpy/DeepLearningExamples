@@ -79,7 +79,7 @@ def train(hparam="train.yaml",
     hp.set_hparam(hparam, kwargs)
     tprint("Hparams:\n{}".format(pp.pformat(hp)))
     tprint("Device count: {}".format(torch.cuda.device_count()))
-    
+
     # model
     model = Fastspeech(
         max_seq_len=hp.max_seq_len,
@@ -141,23 +141,25 @@ def train(hparam="train.yaml",
         return scheduler
 
     # trainer
-    trainer = FastspeechTrainer(data_loader,
-                                'fastspeech',
-                                model,
-                                optimizer_fn=get_optimizer,
-                                final_steps=hp.final_steps,
-                                log_steps=hp.log_step,
-                                ckpt_path=hp.checkpoint_path,
-                                save_steps=hp.save_step,
-                                log_path=hp.log_path,
-                                lr_scheduler_fn=get_warmup_lr_scheduler,
-                                pre_aligns=True if hp.aligns_path else False,
-                                device=device,
-                                use_amp=hp.use_amp,
-                                nvprof_iter_start=hp.nvprof_iter_start,
-                                nvprof_iter_end=hp.nvprof_iter_end,
-                                pyprof_enabled=hp.pyprof_enabled,
-                                )
+    trainer = FastspeechTrainer(
+        data_loader,
+        'fastspeech',
+        model,
+        optimizer_fn=get_optimizer,
+        final_steps=hp.final_steps,
+        log_steps=hp.log_step,
+        ckpt_path=hp.checkpoint_path,
+        save_steps=hp.save_step,
+        log_path=hp.log_path,
+        lr_scheduler_fn=get_warmup_lr_scheduler,
+        pre_aligns=bool(hp.aligns_path),
+        device=device,
+        use_amp=hp.use_amp,
+        nvprof_iter_start=hp.nvprof_iter_start,
+        nvprof_iter_end=hp.nvprof_iter_end,
+        pyprof_enabled=hp.pyprof_enabled,
+    )
+
     trainer.train()
 
 

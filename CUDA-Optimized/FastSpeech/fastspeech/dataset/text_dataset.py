@@ -43,11 +43,9 @@ class TextDataset(Dataset):
         text_encoded = np.array(text_to_sequence(text, self.text_cleaner))
         text_pos = np.array([idx+1 for idx, _ in enumerate(text_encoded)])
 
-        data = {
+        return {
             "text": text,
             "text_norm": text,
             "text_encoded": text_encoded,
             "text_pos": text_pos,
         }
-
-        return data

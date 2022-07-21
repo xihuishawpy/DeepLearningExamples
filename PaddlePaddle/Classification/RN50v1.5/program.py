@@ -45,9 +45,12 @@ def create_feeds(image_shape):
                      key (string): Name of variable to feed.
                      Value (tuple): paddle.static.data.
     """
-    feeds = dict()
-    feeds['data'] = paddle.static.data(
-        name="data", shape=[None] + image_shape, dtype="float32")
+    feeds = {
+        'data': paddle.static.data(
+            name="data", shape=[None] + image_shape, dtype="float32"
+        )
+    }
+
     feeds['label'] = paddle.static.data(
         name="label", shape=[None, 1], dtype="int64")
 
@@ -70,7 +73,7 @@ def create_fetchs(out, feeds, class_num, label_smoothing=0, mode=Mode.TRAIN):
                       key (string): Name of variable to fetch.
                       Value (tuple): (variable, AverageMeter).
     """
-    fetchs = dict()
+    fetchs = {}
     target = paddle.reshape(feeds['label'], [-1, 1])
 
     if mode == Mode.TRAIN:
@@ -94,10 +97,7 @@ def create_fetchs(out, feeds, class_num, label_smoothing=0, mode=Mode.TRAIN):
 
     acc_top1 = paddle.metric.accuracy(input=out, label=target, k=1)
     acc_top5 = paddle.metric.accuracy(input=out, label=target, k=5)
-    metric_dict = dict()
-    metric_dict["top1"] = acc_top1
-    metric_dict["top5"] = acc_top5
-
+    metric_dict = {"top1": acc_top1, "top5": acc_top5}
     for key in metric_dict:
         if mode != Mode.TRAIN and paddle.distributed.get_world_size() > 1:
             paddle.distributed.all_reduce(
@@ -267,13 +267,11 @@ def compile_prog(args, program, loss_name=None, is_train=True):
     """
     build_strategy, exec_strategy = create_strategy(args, is_train)
 
-    compiled_program = paddle.static.CompiledProgram(
-        program).with_data_parallel(
-            loss_name=loss_name,
-            build_strategy=build_strategy,
-            exec_strategy=exec_strategy)
-
-    return compiled_program
+    return paddle.static.CompiledProgram(program).with_data_parallel(
+        loss_name=loss_name,
+        build_strategy=build_strategy,
+        exec_strategy=exec_strategy,
+    )
 
 
 def run(args,
@@ -330,12 +328,7 @@ def run(args,
         args.benchmark_steps + args.benchmark_warmup_steps
 
     dataloader.reset()
-    while True:
-        # profiler.profile_setup return True only when
-        # profile is enable and idx == stop steps
-        if profiler.profile_setup(idx):
-            break
-
+    while not profiler.profile_setup(idx):
         idx += 1
         try:
             batch = next(dataloader)
@@ -380,8 +373,7 @@ def run(args,
         tic = time.perf_counter()
 
         if idx % args.print_interval == 0:
-            log_msg = dict()
-            log_msg['loss'] = metric_dict['loss'].val.item()
+            log_msg = {'loss': metric_dict['loss'].val.item()}
             log_msg['top1'] = metric_dict['top1'].val.item()
             log_msg['top5'] = metric_dict['top5'].val.item()
             log_msg['data_time'] = metric_dict['data_time'].val
@@ -404,10 +396,14 @@ def run(args,
                 logging.info("Begin benchmark at step %d", idx + 1)
 
             if idx == total_benchmark_steps:
-                benchmark_data = dict()
-                benchmark_data[
-                    'ips'] = batch_size * num_trainers / metric_dict[
-                        'batch_time'].avg
+                benchmark_data = {
+                    'ips': (
+                        batch_size
+                        * num_trainers
+                        / metric_dict['batch_time'].avg
+                    )
+                }
+
                 if mode == mode.EVAL:
                     latency = np.array(latency) * 1000
                     quantile = np.quantile(latency, [0.9, 0.95, 0.99])
@@ -420,8 +416,7 @@ def run(args,
                 logging.info("End benchmark at epoch step %d", idx)
                 return benchmark_data
 
-    epoch_data = dict()
-    epoch_data['loss'] = metric_dict['loss'].avg.item()
+    epoch_data = {'loss': metric_dict['loss'].avg.item()}
     epoch_data['epoch_time'] = metric_dict['batch_time'].total
     epoch_data['ips'] = batch_size * num_trainers * \
             metric_dict["batch_time"].count / metric_dict["batch_time"].sum
@@ -443,7 +438,5 @@ def log_info(step, metrics, mode):
         mode(utils.Mode): Train or eval mode.
     """
     prefix = 'train' if mode == Mode.TRAIN else 'val'
-    dllogger_iter_data = dict()
-    for key in metrics:
-        dllogger_iter_data[f"{prefix}.{key}"] = metrics[key]
+    dllogger_iter_data = {f"{prefix}.{key}": metrics[key] for key in metrics}
     dllogger.log(step=step, data=dllogger_iter_data)

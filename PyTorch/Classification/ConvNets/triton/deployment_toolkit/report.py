@@ -37,7 +37,7 @@ def save_results(filename: str, data: List, formatted: bool = False):
 
 
 def format_data(data: List[Dict]) -> List[Dict]:
-    formatted_data = list()
+    formatted_data = []
     for item in data:
         formatted_item = format_keys(data=item)
         formatted_data.append(formatted_item)
@@ -46,13 +46,11 @@ def format_data(data: List[Dict]) -> List[Dict]:
 
 
 def format_keys(data: Dict) -> Dict:
-    keys = {format_key(key=key): value for key, value in data.items()}
-    return keys
+    return {format_key(key=key): value for key, value in data.items()}
 
 
 def format_key(key: str) -> str:
-    key = " ".join([k.capitalize() for k in re.split("_| ", key)])
-    return key
+    return " ".join([k.capitalize() for k in re.split("_| ", key)])
 
 
 def show_results(results: List[Dict]):

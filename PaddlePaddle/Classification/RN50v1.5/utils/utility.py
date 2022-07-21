@@ -16,10 +16,8 @@ import os
 
 
 def get_num_trainers():
-    num_trainers = int(os.environ.get('PADDLE_TRAINERS_NUM', 1))
-    return num_trainers
+    return int(os.environ.get('PADDLE_TRAINERS_NUM', 1))
 
 
 def get_trainer_id():
-    trainer_id = int(os.environ.get('PADDLE_TRAINER_ID', 0))
-    return trainer_id
+    return int(os.environ.get('PADDLE_TRAINER_ID', 0))

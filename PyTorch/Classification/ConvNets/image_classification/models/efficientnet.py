@@ -248,8 +248,9 @@ class EfficientNet(nn.Module):
             for i in range(self.num_layers)
             if "classifier" in layers
             or "features" in layers
-            or any([f"layer{j+1}" in layers for j in range(i, self.num_layers)])
+            or any(f"layer{j+1}" in layers for j in range(i, self.num_layers))
         ]
+
 
         output = {}
         x = self.stem(x)
@@ -261,8 +262,8 @@ class EfficientNet(nn.Module):
 
         if "features" in layers or "classifier" in layers:
             x = self.features(x)
-            if "features" in layers:
-                output["features"] = x
+        if "features" in layers:
+            output["features"] = x
 
         if "classifier" in layers:
             output["classifier"] = self.classifier(x)
@@ -283,8 +284,7 @@ class EfficientNet(nn.Module):
 
     def _get_survival_prob(self, block_id):
         drop_rate = 1.0 - self.survival_prob
-        sp = 1.0 - drop_rate * float(block_id) / self.num_blocks
-        return sp
+        return 1.0 - drop_rate * float(block_id) / self.num_blocks
 
     def _make_features(self, in_channels, num_features):
         return nn.Sequential(
@@ -322,8 +322,6 @@ class EfficientNet(nn.Module):
         prev_layer_count,
         trt,
     ):
-        layers = []
-
         idx = 0
         survival_prob = self._get_survival_prob(idx + prev_layer_count)
         blk = block(
@@ -338,8 +336,7 @@ class EfficientNet(nn.Module):
             self.quantized,
             trt=trt,
         )
-        layers.append((f"block{idx}", blk))
-
+        layers = [(f"block{idx}", blk)]
         for idx in range(1, num_repeat):
             survival_prob = self._get_survival_prob(idx + prev_layer_count)
             blk = block(

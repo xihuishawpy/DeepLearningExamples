@@ -38,14 +38,14 @@ class Momentum:
     def __call__(self):
         # model_list is None in static graph
         parameters = None
-        opt = optim.Momentum(
+        return optim.Momentum(
             learning_rate=self.learning_rate,
             momentum=self.momentum,
             weight_decay=self.weight_decay,
             grad_clip=self.grad_clip,
             multi_precision=self.multi_precision,
-            parameters=parameters)
-        return opt
+            parameters=parameters,
+        )
 
 
 def build_optimizer(args, lr):

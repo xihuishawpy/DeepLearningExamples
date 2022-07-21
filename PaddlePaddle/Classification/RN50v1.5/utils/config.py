@@ -106,12 +106,10 @@ def print_args(args):
 
 
 def check_and_process_args(args):
-    # Precess the scope of run
-    run_scope = None
-    for scope in RunScope:
-        if args.run_scope == scope.value:
-            run_scope = scope
-            break
+    run_scope = next(
+        (scope for scope in RunScope if args.run_scope == scope.value), None
+    )
+
     assert run_scope is not None, \
            f"only support {[scope.value for scope in RunScope]} as run_scope"
     args.run_scope = run_scope
@@ -127,10 +125,13 @@ def check_and_process_args(args):
     args.lr = get_num_trainers() * args.lr
 
     # Precess model loading
-    assert not (args.from_checkpoint is not None and \
-                args.from_pretrained_params is not None), \
-           "--from-pretrained-params and --from-checkpoint should " \
-           "not be set simultaneously."
+    assert (
+        args.from_checkpoint is None or args.from_pretrained_params is None
+    ), (
+        "--from-pretrained-params and --from-checkpoint should "
+        "not be set simultaneously."
+    )
+
     _get_full_path_of_pretrained_params(args)
     _get_full_path_of_ckpt(args)
     args.start_epoch = args.last_epoch_of_checkpoint + 1

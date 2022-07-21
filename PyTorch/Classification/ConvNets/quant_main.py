@@ -50,14 +50,13 @@ import dllogger
 
 
 def available_models():
-    models = {
+    return {
         m.name: m
         for m in [
             efficientnet_quant_b0,
             efficientnet_quant_b4,
         ]
     }
-    return models
 
 
 def parse_quantization(parser):
@@ -105,7 +104,7 @@ def main(args, model_args, model_arch):
         start_epoch,
     ) = prepare_for_training(args, model_args, model_arch)
 
-    print(f"RUNNING QUANTIZATION")
+    print("RUNNING QUANTIZATION")
 
     if not skip_calibration:
         calibrate(trainer.model_and_loss.model, train_loader, logger, calib_iter=10)
@@ -128,8 +127,9 @@ def main(args, model_args, model_arch):
         skip_validation=args.training_only,
         save_checkpoints=args.save_checkpoints,
         checkpoint_dir=args.workspace,
-        checkpoint_filename="quantized_" + args.checkpoint_filename,
+        checkpoint_filename=f"quantized_{args.checkpoint_filename}",
     )
+
 
     if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
         logger.end()

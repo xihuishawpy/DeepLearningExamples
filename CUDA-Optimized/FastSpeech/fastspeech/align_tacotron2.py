@@ -61,9 +61,7 @@ def get_duration(texts, text_lens, mels, mel_lens, tacotron2, device):
         (texts, text_lens, mels, None, mel_lens))
 
     aligns = to_cpu_numpy(aligns)
-    durs = torch.FloatTensor([compute_duration(align) for align in aligns])
-
-    return durs
+    return torch.FloatTensor([compute_duration(align) for align in aligns])
 
 
 def compute_duration(align):
@@ -119,12 +117,12 @@ def preprocess_aligns(
         mels = batched['mel']
         mel_lens = batched['mel_len']
 
-        tprint("Processing {}.".format(', '.join(names)))
+        tprint(f"Processing {', '.join(names)}.")
         durs = get_duration(texts, text_lens, mels,
                             mel_lens, tacotron2, device)
 
-        for i, (name, dur) in enumerate(zip(names, durs)):
-            save_path = os.path.join(hp.aligns_path, name + ".align.npy")
+        for name, dur in zip(names, durs):
+            save_path = os.path.join(hp.aligns_path, f"{name}.align.npy")
 
             if os.path.exists(save_path):
                 continue

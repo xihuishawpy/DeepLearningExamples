@@ -48,7 +48,7 @@ def get_plugin_creator(plugin_name):
 
 def build_engine(shape):
     plugin_creator = get_plugin_creator('AddPosEncPlugin')
-    if plugin_creator == None:
+    if plugin_creator is None:
         print('Plugin not found. Exiting')
         exit()
 
@@ -57,7 +57,7 @@ def build_engine(shape):
     builder.max_workspace_size = 1 << 20
     builder.fp16_mode = use_fp16
     network = builder.create_network()
-    
+
     tensor = network.add_input('data', trt.DataType.FLOAT, shape)
     tensor = network.add_plugin_v2(
         [tensor], 

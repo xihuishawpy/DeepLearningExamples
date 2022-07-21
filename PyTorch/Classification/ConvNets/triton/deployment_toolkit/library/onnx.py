@@ -48,7 +48,7 @@ def _value_info2tensor_spec(value_info: onnx.ValueInfoProto):
         return None if isinstance(dim, (str, bytes)) else dim
 
     shape = value_info.type.tensor_type.shape
-    shape = tuple([_get_dim(d) for d in shape.dim])
+    shape = tuple(_get_dim(d) for d in shape.dim)
     return TensorSpec(value_info.name, dtype=dtype, shape=shape)
 
 
@@ -72,7 +72,7 @@ def _infer_graph_precision(onnx_graph: onnx.GraphProto) -> Optional[Precision]:
     node_inputs2node = {input_name: node for node in onnx_graph.node for input_name in node.input}
 
     for node in onnx_graph.node:
-        node_dtype = node_output2type.get("+".join(node.output), None)
+        node_dtype = node_output2type.get("+".join(node.output))
         nx_graph.add_node(
             node.name,
             op=node.op_type,
@@ -80,21 +80,21 @@ def _infer_graph_precision(onnx_graph: onnx.GraphProto) -> Optional[Precision]:
             dtype=node_dtype,
         )
         for input_name in node.input:
-            prev_node = node_outputs2node.get(input_name, None)
+            prev_node = node_outputs2node.get(input_name)
             if prev_node:
                 nx_graph.add_edge(prev_node.name, node.name)
 
     for input_node in onnx_graph.input:
         input_name = input_node.name
         nx_graph.add_node(input_name, op="input", dtype=_get_dtype(input_node))
-        next_node = node_inputs2node.get(input_name, None)
+        next_node = node_inputs2node.get(input_name)
         if next_node:
             nx_graph.add_edge(input_name, next_node.name)
 
     for output in onnx_graph.output:
         output_name = output.name
         nx_graph.add_node(output_name, op="output", dtype=_get_dtype(output))
-        prev_node = node_outputs2node.get(output_name, None)
+        prev_node = node_outputs2node.get(output_name)
         if prev_node:
             nx_graph.add_edge(prev_node.name, output_name)
         else:
@@ -171,8 +171,7 @@ def _check_providers(providers):
     if not isinstance(providers, (list, tuple)):
         providers = [providers]
     available_providers = onnxruntime.get_available_providers()
-    unavailable = set(providers) - set(available_providers)
-    if unavailable:
+    if unavailable := set(providers) - set(available_providers):
         raise RuntimeError(f"Unavailable providers {unavailable}")
     return providers
 

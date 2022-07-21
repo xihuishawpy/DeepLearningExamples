@@ -52,7 +52,7 @@ command += ['--data-train-idx', str(opts.data_root / "train.idx")]
 command += ['--data-val', str(opts.data_root / "val.rec")]
 command += ['--data-val-idx', str(opts.data_root / "val.idx")]
 command += ['--dtype', opts.dtype]
-command += ['--image-shape', n_ch + ',224,224']
+command += ['--image-shape', f'{n_ch},224,224']
 if opts.dtype == 'float16':
     command += '--fuse-bn-relu 1 --fuse-bn-add-relu 1'.split()
     command += '--input-layout NCHW --conv-layout NHWC ' \

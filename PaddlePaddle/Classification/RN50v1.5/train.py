@@ -35,7 +35,7 @@ class MetricSummary:
 
     def update(self, new_metrics):
         if not self.is_updated:
-            self.metric_dict = dict()
+            self.metric_dict = {}
 
         for key in new_metrics:
             if key in self.metric_dict:

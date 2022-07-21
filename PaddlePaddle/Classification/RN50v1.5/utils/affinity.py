@@ -71,8 +71,8 @@ def _get_gpu_affinity_table():
     assert cpu_affinity_idx > 0, \
         "Can not obtain correct CPU affinity column index via nvidia-smi!"
 
-    gpu_cpu_affinity_map = dict()
-    cpu_socket_gpus_list = dict()
+    gpu_cpu_affinity_map = {}
+    cpu_socket_gpus_list = {}
     # Skip title
     for idx in range(1, len(lines)):
         line = lines[idx]
@@ -118,14 +118,14 @@ def _group_cpu_cores(cpu_socket_gpus_list):
                                 ]}
 
     """
-    cpu_core_groups = dict()
+    cpu_core_groups = {}
     for cpu_socket in cpu_socket_gpus_list:
-        cpu_core_groups[cpu_socket] = list()
+        cpu_core_groups[cpu_socket] = []
         gpu_count = len(cpu_socket_gpus_list[cpu_socket])
         cores = cpu_socket.split(',')
         for core in cores:
             core_indices = _get_core_indices(core)
-            core_group = list()
+            core_group = []
             for i in range(gpu_count):
                 start = i % len(core_indices)
                 sub_core_set = core_indices[start::gpu_count]
@@ -202,7 +202,7 @@ def set_cpu_affinity():
     # in index-0 of cpu_core_groups['0-9,20-29'], that is [0, 2, 4, 6, 8]
     # and [20, 22, 24, 26, 28].
     # affinity_mask = [0, 2, 4, 6, 8, 20, 22, 24, 26, 28]
-    affinity_mask = list()
+    affinity_mask = []
     cpu_affinity_key = gpu_cpu_affinity_map[local_rank]
     cpu_core_idx = cpu_socket_gpus_list[cpu_affinity_key].index(local_rank)
     for cpu_core_group in cpu_core_groups[cpu_affinity_key]:

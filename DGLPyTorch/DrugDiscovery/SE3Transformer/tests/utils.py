@@ -26,8 +26,7 @@ import torch
 
 
 def get_random_graph(N, num_edges_factor=18):
-    graph = dgl.transform.remove_self_loop(dgl.rand_graph(N, N * num_edges_factor))
-    return graph
+    return dgl.transform.remove_self_loop(dgl.rand_graph(N, N * num_edges_factor))
 
 
 def assign_relative_pos(graph, coords):

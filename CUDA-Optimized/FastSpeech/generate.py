@@ -120,12 +120,12 @@ def generate(hparam='infer.yaml',
         wb_inferencer = WaveGlowInferencer(
             ckpt_file=hp.waveglow_path, device=device, use_fp16=hp.use_fp16)
 
-    tprint("Generating {} sentences.. ".format(len(dataset)))
+    tprint(f"Generating {len(dataset)} sentences.. ")
 
     with fs_inferencer, wb_inferencer:
         try:
             for i in range(len(data_loader)):
-                tprint("------------- BATCH # {} -------------".format(i))
+                tprint(f"------------- BATCH # {i} -------------")
 
                 with TimeElapsed(name="Inferece Time: E2E", format=":.6f"):
                     ## Text-to-Mel ##
@@ -151,13 +151,13 @@ def generate(hparam='infer.yaml',
                 ## Write wavs ##
                 pathlib.Path(results_path).mkdir(parents=True, exist_ok=True)
                 for i, (text, wav) in enumerate(zip(texts, wavs)):
-                    tprint("TEXT #{}: \"{}\"".format(i, text))
+                    tprint(f'TEXT #{i}: \"{text}\"')
 
                     # remove paddings in case of batch size > 1
                     wav_len = mel_lens[i] * hp.hop_len
                     wav = wav[:wav_len]
 
-                    path = os.path.join(results_path, text[:MAX_FILESIZE] + ".wav")
+                    path = os.path.join(results_path, f"{text[:MAX_FILESIZE]}.wav")
                     librosa.output.write_wav(path, wav, hp.sr)
 
         except StopIteration:

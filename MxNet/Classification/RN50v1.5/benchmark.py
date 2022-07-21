@@ -53,14 +53,14 @@ res['model'] = ''
 res['ngpus'] = args.ngpus
 res['bs'] = args.batch_sizes
 res['metric_keys'] = []
-if args.mode == 'train' or args.mode == 'train_val':
+if args.mode in ['train', 'train_val']:
     res['metric_keys'].append('train.ips')
-if args.mode == 'val' or args.mode == 'train_val':
+if args.mode in ['val', 'train_val']:
     res['metric_keys'].append('val.ips')
     res['metric_keys'].append('val.latency_avg')
 if args.mode == 'val':
     for percentile in latency_percentiles:
-        res['metric_keys'].append('val.latency_{}'.format(percentile))
+        res['metric_keys'].append(f'val.latency_{percentile}')
 
 res['metrics'] = OrderedDict()
 
@@ -69,7 +69,7 @@ for n in args.ngpus:
     for bs in args.batch_sizes:
         res['metrics'][str(n)][str(bs)] = OrderedDict()
 
-        log_file = args.output + '-{},{}'.format(n, bs)
+        log_file = args.output + f'-{n},{bs}'
         Popen(['timeout', args.timeout, args.executable, '-n', str(n), '-b', str(bs),
                '--benchmark-iters', str(args.benchmark_iters),
                '-e', str(args.epochs), '--dllogger-log', log_file,

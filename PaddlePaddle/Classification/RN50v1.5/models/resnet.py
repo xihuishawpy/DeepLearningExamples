@@ -129,10 +129,7 @@ class BottleneckBlock(nn.Layer):
         x = self.conv1(x)
         x = self.conv2(x)
 
-        if self.shortcut:
-            short = identity
-        else:
-            short = self.short(identity)
+        short = identity if self.shortcut else self.short(identity)
         x = paddle.add(x=x, y=short)
         x = self.relu(x)
         return x
@@ -218,5 +215,4 @@ class ResNet(nn.Layer):
 
 
 def ResNet50(**kwargs):
-    model = ResNet(**kwargs)
-    return model
+    return ResNet(**kwargs)

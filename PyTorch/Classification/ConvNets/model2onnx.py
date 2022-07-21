@@ -18,7 +18,7 @@ from image_classification.models import (
 
 
 def available_models():
-    models = {
+    return {
         m.name: m
         for m in [
             resnet50,
@@ -32,7 +32,6 @@ def available_models():
             efficientnet_quant_b4,
         ]
     }
-    return models
 
 
 def parse_args(parser):
@@ -55,14 +54,13 @@ def parse_args(parser):
 def final_name(base_name):
     splitted = base_name.split('.')
     if 'pt' in splitted:
-        fin_name = base_name.replace('pt', 'onnx')
+        return base_name.replace('pt', 'onnx')
     elif 'pth' in splitted:
-        fin_name = base_name.replace('pth', 'onnx')
+        return base_name.replace('pth', 'onnx')
     elif len(splitted) > 1:
-        fin_name = '.'.join(splitted[:-1] + ['onnx'])
+        return '.'.join(splitted[:-1] + ['onnx'])
     else:
-        fin_name = base_name + '.onnx'
-    return fin_name
+        return f'{base_name}.onnx'
 
 
 def get_dataloader(image_size, bs, num_classes):
@@ -85,14 +83,13 @@ def prepare_inputs(dataloader, device):
         if type(batch) is torch.Tensor:
             batch_d = batch.to(device)
             batch_d = (batch_d, )
-            inputs.append(batch_d)
         else:
             batch_d = []
             for x in batch:
                 assert type(x) is torch.Tensor, "input is not a tensor"
                 batch_d.append(x.to(device))
             batch_d = tuple(batch_d)
-            inputs.append(batch_d)
+        inputs.append(batch_d)
     return inputs
 
 

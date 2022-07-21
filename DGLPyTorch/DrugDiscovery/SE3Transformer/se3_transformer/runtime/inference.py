@@ -42,8 +42,7 @@ def evaluate(model: nn.Module,
              callbacks: List[BaseCallback],
              args):
     model.eval()
-    for i, batch in tqdm(enumerate(dataloader), total=len(dataloader), unit='batch', desc=f'Evaluation',
-                         leave=False, disable=(args.silent or get_local_rank() != 0)):
+    for i, batch in tqdm(enumerate(dataloader), total=len(dataloader), unit='batch', desc='Evaluation', leave=False, disable=(args.silent or get_local_rank() != 0)):
         *input, target = to_cuda(batch)
 
         for callback in callbacks:
@@ -113,7 +112,12 @@ if __name__ == '__main__':
         model = DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
         model._set_static_graph()
 
-    test_dataloader = datamodule.test_dataloader() if not args.benchmark else datamodule.train_dataloader()
+    test_dataloader = (
+        datamodule.train_dataloader()
+        if args.benchmark
+        else datamodule.test_dataloader()
+    )
+
     evaluate(model,
              test_dataloader,
              callbacks,

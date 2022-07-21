@@ -39,8 +39,7 @@ from se3_transformer.runtime.utils import get_local_rank, str2bool, using_tensor
 def _get_relative_pos(qm9_graph: DGLGraph) -> Tensor:
     x = qm9_graph.ndata['pos']
     src, dst = qm9_graph.edges()
-    rel_pos = x[dst] - x[src]
-    return rel_pos
+    return x[dst] - x[src]
 
 
 def _get_split_sizes(full_dataset: Dataset) -> Tuple[int, int, int]:

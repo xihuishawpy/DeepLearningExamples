@@ -87,12 +87,9 @@ except ImportError:
     has_apex = False
 
 has_native_amp = False
-try:
+with suppress(AttributeError):
     if getattr(torch.cuda.amp, "autocast") is not None:
         has_native_amp = True
-except AttributeError:
-    pass
-
 try:
     import wandb
 

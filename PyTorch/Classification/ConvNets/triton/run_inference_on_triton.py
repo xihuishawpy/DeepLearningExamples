@@ -240,10 +240,10 @@ def main():
     args = _parse_args()
 
     log_format = "%(asctime)s %(levelname)s %(name)s %(message)s"
-    log_level = logging.INFO if not args.verbose else logging.DEBUG
+    log_level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(level=log_level, format=log_format)
 
-    LOGGER.info(f"args:")
+    LOGGER.info("args:")
     for key, value in vars(args).items():
         LOGGER.info(f"    {key} = {value}")
 

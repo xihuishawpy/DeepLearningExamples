@@ -38,11 +38,9 @@ def get_data_loader(batch_size, *, data_path):
         ),
     )
 
-    val_loader = torch.utils.data.DataLoader(
+    return torch.utils.data.DataLoader(
         val_dataset, batch_size=batch_size, shuffle=False
     )
-
-    return val_loader
 
 
 if __name__ == "__main__":
@@ -82,18 +80,15 @@ if __name__ == "__main__":
     )
     dataloader = get_data_loader(FLAGS.batch_size, data_path=FLAGS.inference_data)
 
-    inputs = []
-    inputs.append(
+    inputs = [
         tritongrpcclient.InferInput(
             "input__0",
             [FLAGS.batch_size, 3, 224, 224],
             "FP16" if FLAGS.fp16 else "FP32",
         )
-    )
+    ]
 
-    outputs = []
-    outputs.append(tritongrpcclient.InferRequestedOutput("output__0"))
-
+    outputs = [tritongrpcclient.InferRequestedOutput("output__0")]
     all_img = 0
     cor_img = 0
 

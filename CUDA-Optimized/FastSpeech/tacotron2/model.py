@@ -151,7 +151,7 @@ class Postnet(nn.Module):
                 nn.BatchNorm1d(hparams.postnet_embedding_dim))
         )
 
-        for i in range(1, hparams.postnet_n_convolutions - 1):
+        for _ in range(1, hparams.postnet_n_convolutions - 1):
             self.convolutions.append(
                 nn.Sequential(
                     ConvNorm(hparams.postnet_embedding_dim,
@@ -287,9 +287,11 @@ class Decoder(nn.Module):
         decoder_input: all zeros frames
         """
         B = memory.size(0)
-        decoder_input = Variable(memory.data.new(
-            B, self.n_mel_channels * self.n_frames_per_step).zero_())
-        return decoder_input
+        return Variable(
+            memory.data.new(
+                B, self.n_mel_channels * self.n_frames_per_step
+            ).zero_()
+        )
 
     def initialize_decoder_states(self, memory, mask):
         """ Initializes attention rnn states, decoder rnn states, attention
@@ -559,7 +561,6 @@ class Tacotron2(nn.Module):
         mel_outputs_postnet = self.postnet(mel_outputs)
         mel_outputs_postnet = mel_outputs + mel_outputs_postnet
 
-        outputs = self.parse_output(
-            [mel_outputs, mel_outputs_postnet, gate_outputs, alignments])
-
-        return outputs
+        return self.parse_output(
+            [mel_outputs, mel_outputs_postnet, gate_outputs, alignments]
+        )

@@ -27,7 +27,7 @@ import yaml
 
 
 def load_hparam(filepath):
-    hparam_dict = dict()
+    hparam_dict = {}
 
     if not filepath:
         return hparam_dict
@@ -43,10 +43,7 @@ def load_hparam(filepath):
 def merge_dict(new, default):
     if isinstance(new, dict) and isinstance(default, dict):
         for k, v in default.items():
-            if k not in new:
-                new[k] = v
-            else:
-                new[k] = merge_dict(new[k], v)
+            new[k] = v if k not in new else merge_dict(new[k], v)
     return new
 
 
@@ -62,7 +59,7 @@ class Dotdict(dict):
     __delattr__ = dict.__delitem__
 
     def __init__(self, dct=None):
-        dct = dict() if not dct else dct
+        dct = dct or dict()
         for key, value in dct.items():
             if hasattr(value, 'keys'):
                 value = Dotdict(value)

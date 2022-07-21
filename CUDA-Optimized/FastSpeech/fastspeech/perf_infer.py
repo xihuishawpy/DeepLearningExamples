@@ -83,8 +83,8 @@ def perf_inference(hparam="infer.yaml",
     """
 
     hp.set_hparam(hparam, kwargs)
-    tprint("Hparams:\n{}".format(pp.pformat(hp)))
-    tprint("Device count: {}".format(torch.cuda.device_count()))
+    tprint(f"Hparams:\n{pp.pformat(hp)}")
+    tprint(f"Device count: {torch.cuda.device_count()}")
 
     model = Fastspeech(
         max_seq_len=hp.max_seq_len,
@@ -106,16 +106,18 @@ def perf_inference(hparam="infer.yaml",
         fused_layernorm=hp.fused_layernorm
     )
 
-    dataset_size = hp.batch_size * (n_iters if n_iters else 1)
-    tprint("Dataset size: {}".format(dataset_size))
+    dataset_size = hp.batch_size * (n_iters or 1)
+    tprint(f"Dataset size: {dataset_size}")
     dataset = TextDataset([INPUT_TEXT] * (dataset_size + (WARMUP_ITERS * hp.batch_size)))
 
-    data_loader = PadDataLoader(dataset,
-                                batch_size=hp.batch_size,
-                                num_workers=hp.n_workers,
-                                shuffle=False if hp.use_trt and hp.trt_multi_engine else True,
-                                drop_last=True,
-                                )
+    data_loader = PadDataLoader(
+        dataset,
+        batch_size=hp.batch_size,
+        num_workers=hp.n_workers,
+        shuffle=not hp.use_trt or not hp.trt_multi_engine,
+        drop_last=True,
+    )
+
 
     fs_inferencer = get_inferencer(model, data_loader, device)
 
@@ -128,7 +130,7 @@ def perf_inference(hparam="infer.yaml",
 
     with fs_inferencer, wb_inferencer if with_vocoder else ExitStack():
 
-        tprint("Perf started. Batch size={}.".format(hp.batch_size))
+        tprint(f"Perf started. Batch size={hp.batch_size}.")
 
         latencies = []
         throughputs = []

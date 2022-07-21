@@ -95,7 +95,9 @@ def _parse_and_validate_args():
 
     types_requiring_io_params = []
 
-    if args.input_type in types_requiring_io_params and not all(p for p in [args.inputs, args.outputs]):
+    if args.input_type in types_requiring_io_params and not all(
+        [args.inputs, args.outputs]
+    ):
         parser.error(f"For {args.input_type} input provide --inputs and --outputs parameters")
 
     return args
@@ -104,11 +106,11 @@ def _parse_and_validate_args():
 def main():
     args = _parse_and_validate_args()
 
-    log_level = logging.INFO if not args.verbose else logging.DEBUG
+    log_level = logging.DEBUG if args.verbose else logging.INFO
     log_format = "%(asctime)s %(levelname)s %(name)s %(message)s"
     logging.basicConfig(level=log_level, format=log_format)
 
-    LOGGER.info(f"args:")
+    LOGGER.info("args:")
     for key, value in vars(args).items():
         LOGGER.info(f"    {key} = {value}")
 
@@ -122,12 +124,12 @@ def main():
     with runner.init_inference(model=model) as runner_session, NpzWriter(args.output_dir) as writer:
         get_dataloader_fn = load_from_file(args.dataloader, label="dataloader", target=DATALOADER_FN_NAME)
         dataloader_fn = ArgParserGenerator(get_dataloader_fn).from_args(args)
-        LOGGER.info(f"Data loader initialized; Running inference")
+        LOGGER.info("Data loader initialized; Running inference")
         for ids, x, y_real in tqdm(dataloader_fn(), unit="batch", mininterval=10):
             y_pred = runner_session(x)
             data = _verify_and_format_dump(args, ids=ids, x=x, y_pred=y_pred, y_real=y_real)
             writer.write(**data)
-        LOGGER.info(f"Inference finished")
+        LOGGER.info("Inference finished")
 
 
 if __name__ == "__main__":

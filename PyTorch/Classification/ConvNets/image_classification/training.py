@@ -277,9 +277,8 @@ def validate(infer_fn, val_loader, log_fn, prof=-1, with_loss=True):
                     reduced_loss = utils.reduce_tensor(loss.detach())
                 prec1 = utils.reduce_tensor(prec1)
                 prec5 = utils.reduce_tensor(prec5)
-            else:
-                if with_loss:
-                    reduced_loss = loss.detach()
+            elif with_loss:
+                reduced_loss = loss.detach()
 
         prec1 = prec1.item()
         prec5 = prec5.item()

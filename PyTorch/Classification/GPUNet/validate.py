@@ -230,20 +230,14 @@ def gpunet_p1(pretrained=False, **kwargs):
 
 
 has_apex = False
-try:
+with suppress(ImportError):
     from apex import amp
 
     has_apex = True
-except ImportError:
-    pass
-
 has_native_amp = False
-try:
+with suppress(AttributeError):
     if getattr(torch.cuda.amp, "autocast") is not None:
         has_native_amp = True
-except AttributeError:
-    pass
-
 torch.backends.cudnn.benchmark = True
 _logger = logging.getLogger("validate")
 

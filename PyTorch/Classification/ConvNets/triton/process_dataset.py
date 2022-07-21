@@ -38,8 +38,7 @@ def parse_meta_mat(metafile) -> Dict[int, str]:
     nums_children = list(zip(*meta))[4]
     meta = [meta[idx] for idx, num_children in enumerate(nums_children) if num_children == 0]
     idcs, wnids = list(zip(*meta))[:2]
-    idx_to_wnid = {idx: wnid for idx, wnid in zip(idcs, wnids)}
-    return idx_to_wnid
+    return dict(zip(idcs, wnids))
 
 
 def _process_image(image_file, target_size):
@@ -53,8 +52,9 @@ def _process_image(image_file, target_size):
 
     # central crop of image to target_size
     left, upper = (resize_to[0] - target_size[0]) // 2, (resize_to[1] - target_size[1]) // 2
-    cropped_image = resized_image.crop((left, upper, left + target_size[0], upper + target_size[1]))
-    return cropped_image
+    return resized_image.crop(
+        (left, upper, left + target_size[0], upper + target_size[1])
+    )
 
 
 def main():

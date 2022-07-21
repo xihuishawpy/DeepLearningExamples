@@ -81,13 +81,13 @@ class FastSpeechTRTMultiEngineInferencer(FastSpeechTRTInferencer):
         # load engines and create contexts
         self.engine_list = []
         self.context_list = []
-        for i, (trt_max_input_seq_len, trt_max_output_seq_len, trt_file_path) in enumerate(self.max_seq_lens_and_file_path_list):
+        for trt_max_input_seq_len, trt_max_output_seq_len, trt_file_path in self.max_seq_lens_and_file_path_list:
             if trt_file_path and os.path.isfile(trt_file_path) and not self.trt_force_build:
                 with open(trt_file_path, 'rb') as f:
                     engine_str = f.read()
                 with trt.Runtime(TRT_LOGGER) as runtime:
                     engine = runtime.deserialize_cuda_engine(engine_str)
-                tprint('TRT Engine Loaded from {} successfully.'.format(trt_file_path))
+                tprint(f'TRT Engine Loaded from {trt_file_path} successfully.')
             else:
                 self.trt_max_input_seq_len = trt_max_input_seq_len
                 self.trt_max_output_seq_len = trt_max_output_seq_len
@@ -99,7 +99,7 @@ class FastSpeechTRTMultiEngineInferencer(FastSpeechTRTInferencer):
 
                 with open(self.trt_file_path, 'wb') as f:
                     f.write(engine.serialize())
-                tprint('TRT Engine Saved in {}.'.format(self.trt_file_path))
+                tprint(f'TRT Engine Saved in {self.trt_file_path}.')
 
             self.engine_list.append(engine)
 
@@ -118,7 +118,7 @@ class FastSpeechTRTMultiEngineInferencer(FastSpeechTRTInferencer):
             self.trt_max_input_seq_len = trt_max_input_seq_len
             self.trt_max_output_seq_len = trt_max_output_seq_len
             self.trt_file_path = trt_file_path
-        tprint('TRT Engine {} is selected.'.format(self.trt_file_path))
+        tprint(f'TRT Engine {self.trt_file_path} is selected.')
 
     def infer(self, acts=None):
         inputs = next(self.data_loader_iter)
@@ -136,7 +136,7 @@ class FastSpeechTRTMultiEngineInferencer(FastSpeechTRTInferencer):
         # TODO: process word emb in TRT if the API allows.
         with torch.no_grad():
             text_encoded = self.model.word_emb(text_encoded)
-        
+
         # create input/output buffers
         input_buffers = common.create_inputs_from_torch(self.engine, [text_encoded, text_mask])
         output_buffers = common.create_outputs_from_torch(self.engine)
@@ -151,10 +151,11 @@ class FastSpeechTRTMultiEngineInferencer(FastSpeechTRTInferencer):
         # self.context.execute(batch_size=self.batch_size, bindings=bindings)
         stream.synchronize()
 
-        outputs = dict()
-        outputs['mel'] = output_buffers[-2]
-        outputs['mel_mask'] = output_buffers[-1]
-        outputs['text'] = inputs["text_norm"]
+        outputs = {
+            'mel': output_buffers[-2],
+            'mel_mask': output_buffers[-1],
+            'text': inputs["text_norm"],
+        }
 
         # activations for verifying accuracy.
         if acts is not None:

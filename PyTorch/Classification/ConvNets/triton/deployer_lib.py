@@ -91,8 +91,7 @@ EXECUTION_ACCELERATOR_TEMPLATE = r"""
 
 def remove_empty_lines(text):
     """ removes empty lines from text, returns the result """
-    ret = "".join([s for s in text.strip().splitlines(True) if s.strip()])
-    return ret
+    return "".join([s for s in text.strip().splitlines(True) if s.strip()])
 
 
 def create_deployer(argv):
@@ -250,14 +249,13 @@ class DeployerLibrary:
             if type(batch) is torch.Tensor:
                 batch_d = batch.to(device)
                 batch_d = (batch_d,)
-                inputs.append(batch_d)
             else:
                 batch_d = []
                 for x in batch:
                     assert type(x) is torch.Tensor, "input is not a tensor"
                     batch_d.append(x.to(device))
                 batch_d = tuple(batch_d)
-                inputs.append(batch_d)
+            inputs.append(batch_d)
         return inputs
 
     def get_list_of_shapes(self, l, fun):
@@ -337,8 +335,7 @@ class DeployerLibrary:
             torch.cuda.synchronize()
             time_end = time.time()
             t = time_end - time_start
-            ret.append(outputs)
-            ret.append(t)
+            ret.extend((outputs, t))
         return ret
 
     def compute_tensor_stats(self, tensor):
@@ -362,12 +359,11 @@ class DeployerLibrary:
                 x_values = torch.cat((x_values, x), 0)
                 y_values = torch.cat((y_values, y), 0)
                 d_values = torch.cat((d_values, d), 0)
-        Error_stats = {
+        return {
             "Original": self.compute_tensor_stats(x_values),
             "Converted": self.compute_tensor_stats(y_values),
             "Absolute difference": self.compute_tensor_stats(d_values),
         }
-        return Error_stats
 
     def print_errors(self, Error_stats):
         """ print various statistcs of Linf errors """
@@ -400,11 +396,10 @@ class DeployerLibrary:
             d = {
                 "num": str(i),
                 "type": torch_type_to_triton_type[typ],
-                "dims": str([1])
-                if len(shape) == 1
-                else str(list(shape)[1:]),  # first dimension is the batch size
+                "dims": str([1]) if len(shape) == 1 else str(list(shape)[1:]),
+                "reshape": "reshape: { shape: [ ] }" if len(shape) == 1 else "",
             }
-            d["reshape"] = "reshape: { shape: [ ] }" if len(shape) == 1 else ""
+
             spec_inputs += input_template.format_map(d)
         spec_inputs = spec_inputs[:-1]
 
@@ -414,11 +409,10 @@ class DeployerLibrary:
             d = {
                 "num": str(i),
                 "type": torch_type_to_triton_type[typ],
-                "dims": str([1])
-                if len(shape) == 1
-                else str(list(shape)[1:]),  # first dimension is the batch size
+                "dims": str([1]) if len(shape) == 1 else str(list(shape)[1:]),
+                "reshape": "reshape: { shape: [ ] }" if len(shape) == 1 else "",
             }
-            d["reshape"] = "reshape: { shape: [ ] }" if len(shape) == 1 else ""
+
             spec_outputs += output_template.format_map(d)
         spec_outputs = spec_outputs[:-1]
 

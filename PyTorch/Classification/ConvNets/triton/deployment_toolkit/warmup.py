@@ -29,12 +29,12 @@ def warmup(
     shared_memory: bool = False
 ):
     print("\n")
-    print(f"==== Warmup start ====")
+    print("==== Warmup start ====")
     print("\n")
 
     input_shapes = " ".join(map(lambda shape: f" --shape {shape}", input_shapes)) if input_shapes else ""
 
-    measurement_window = 6 * measurement_window
+    measurement_window *= 6
 
     max_batch_size = max(batch_sizes)
     max_total_requests = 2 * max_batch_size * triton_instances * triton_gpu_engine_count
@@ -63,5 +63,5 @@ def warmup(
         sys.exit(1)
 
     print("\n")
-    print(f"==== Warmup done ====")
+    print("==== Warmup done ====")
     print("\n")

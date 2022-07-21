@@ -37,8 +37,7 @@ class Device:
         affinity_list = [int(x) for x in affinity_string]
         affinity_list.reverse()  # so core 0 is in 0th element of list
 
-        ret = [i for i, e in enumerate(affinity_list) if e != 0]
-        return ret
+        return [i for i, e in enumerate(affinity_list) if e != 0]
 
 
 def get_thread_siblings_list():
@@ -52,8 +51,7 @@ def get_thread_siblings_list():
     for fname in pathlib.Path(path[0]).glob(path[1:]):
         with open(fname) as f:
             content = f.read().strip()
-            res = pattern.findall(content)
-            if res:
+            if res := pattern.findall(content):
                 pair = tuple(sorted(map(int, res[0])))
                 thread_siblings_list.append(pair)
     thread_siblings_list = list(set(thread_siblings_list))
@@ -74,23 +72,17 @@ def group_list_by_dict(affinity, siblings_dict):
     grouped = itertools.groupby(
         sorted_affinity, key=lambda x: siblings_dict.get(x, (x,))
     )
-    grouped_affinity = []
-    for key, group in grouped:
-        grouped_affinity.append(tuple(group))
-    return grouped_affinity
+    return [tuple(group) for key, group in grouped]
 
 
 def group_affinity_by_siblings(socket_affinities):
     siblings_list = get_thread_siblings_list()
     siblings_dict = build_thread_siblings_dict(siblings_list)
 
-    grouped_socket_affinities = []
-
-    for socket_affinity in socket_affinities:
-        grouped_socket_affinities.append(
-            group_list_by_dict(socket_affinity, siblings_dict)
-        )
-    return grouped_socket_affinities
+    return [
+        group_list_by_dict(socket_affinity, siblings_dict)
+        for socket_affinity in socket_affinities
+    ]
 
 
 def ungroup_affinities(affinities, cores):
@@ -109,7 +101,7 @@ def ungroup_affinities(affinities, cores):
 def check_socket_affinities(socket_affinities):
     # sets of cores should be either identical or disjoint
     for i, j in itertools.product(socket_affinities, socket_affinities):
-        if not set(i) == set(j) and not set(i).isdisjoint(set(j)):
+        if set(i) != set(j) and not set(i).isdisjoint(set(j)):
             raise RuntimeError(
                 f"Sets of cores should be either identical or disjoint, "
                 f"but got {i} and {j}."
@@ -133,8 +125,7 @@ def get_socket_affinities(nproc_per_node, exclude_unavailable_cores=True):
 
 def get_grouped_socket_affinities(nproc_per_node, exclude_unavailable_cores=True):
     socket_affinities = get_socket_affinities(nproc_per_node, exclude_unavailable_cores)
-    grouped_socket_affinities = group_affinity_by_siblings(socket_affinities)
-    return grouped_socket_affinities
+    return group_affinity_by_siblings(socket_affinities)
 
 
 def set_socket_affinity(gpu_id, nproc_per_node, cores):
@@ -225,11 +216,10 @@ def set_socket_unique_affinity(gpu_id, nproc_per_node, cores, mode, balanced=Tru
     # compute minimal number of physical cores per GPU across all GPUs and
     # sockets, code assigns this number of cores per GPU if balanced == True
     min_physical_cores_per_gpu = min(
-        [
-            len(cores) // len(gpus)
-            for cores, gpus in grouped_socket_affinities_to_device_ids.items()
-        ]
+        len(cores) // len(gpus)
+        for cores, gpus in grouped_socket_affinities_to_device_ids.items()
     )
+
 
     grouped_unique_affinities = [None] * nproc_per_node
 
@@ -413,5 +403,4 @@ def set_affinity(
     else:
         raise RuntimeError("Unknown affinity mode")
 
-    affinity = os.sched_getaffinity(0)
-    return affinity
+    return os.sched_getaffinity(0)

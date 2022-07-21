@@ -64,7 +64,7 @@ class Checkpointer:
 
         full_path = self.get_full_path(filename)
 
-        print("SAVING {}".format(full_path))
+        print(f"SAVING {full_path}")
         torch.save(state, full_path)
         self.checkpoints.append(filename)
 
@@ -151,7 +151,7 @@ class TimeoutHandler:
         def master_handler(signum, frame):
             self.release()
             self._interrupted = True
-            print(f"Received SIGTERM")
+            print("Received SIGTERM")
 
         def ignoring_handler(signum, frame):
             self.release()

@@ -49,23 +49,26 @@ def collect_stats(model, data_loader, logger, num_batches):
     """Feed data to the network and collect statistic"""
     if logger is not None:
         logger.register_metric(
-            f"calib.total_ips",
+            "calib.total_ips",
             log.PERF_METER(),
             verbosity=dllogger.Verbosity.DEFAULT,
             metadata=IPS_METADATA,
         )
+
         logger.register_metric(
-            f"calib.data_time",
+            "calib.data_time",
             log.PERF_METER(),
             verbosity=dllogger.Verbosity.DEFAULT,
             metadata=TIME_METADATA,
         )
+
         logger.register_metric(
-            f"calib.compute_latency",
+            "calib.compute_latency",
             log.PERF_METER(),
             verbosity=dllogger.Verbosity.DEFAULT,
             metadata=TIME_METADATA,
         )
+
     # Enable calibrators
     data_iter = enumerate(data_loader)
     if logger is not None:
@@ -93,9 +96,9 @@ def collect_stats(model, data_loader, logger, num_batches):
         it_time = time.time() - end
 
         if logger is not None:
-            logger.log_metric(f"calib.total_ips", calc_ips(bs, it_time))
-            logger.log_metric(f"calib.data_time", data_time)
-            logger.log_metric(f"calib.compute_latency", it_time - data_time)
+            logger.log_metric("calib.total_ips", calc_ips(bs, it_time))
+            logger.log_metric("calib.data_time", data_time)
+            logger.log_metric("calib.compute_latency", it_time - data_time)
 
         if i >= num_batches:
             time.sleep(5)

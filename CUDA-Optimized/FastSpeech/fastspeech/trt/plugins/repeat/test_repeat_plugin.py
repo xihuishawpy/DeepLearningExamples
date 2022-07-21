@@ -48,7 +48,7 @@ def get_plugin_creator(plugin_name):
 
 def build_engine(shape, shape2):
     plugin_creator = get_plugin_creator('RepeatPlugin')
-    if plugin_creator == None:
+    if plugin_creator is None:
         print('Plugin not found. Exiting')
         exit()
 
@@ -57,9 +57,9 @@ def build_engine(shape, shape2):
     builder.max_workspace_size = 1 << 20
     builder.fp16_mode = use_fp16
     network = builder.create_network()
-    
+
     tensor = network.add_input('input1', trt.DataType.FLOAT, shape)
-    tensor2 = network.add_input('input2', trt.DataType.FLOAT, shape2)    
+    tensor2 = network.add_input('input2', trt.DataType.FLOAT, shape2)
     tensor = network.add_plugin_v2(
         [tensor, tensor2], 
         plugin_creator.create_plugin('RepeatPlugin', trt.PluginFieldCollection([

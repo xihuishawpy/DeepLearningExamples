@@ -65,10 +65,10 @@ class WaveGlowTRTInferencer(object):
             self.engine = runtime.deserialize_cuda_engine(f.read())
 
         if self.engine:
-            tprint('TRT Engine Loaded from {} successfully.'.format(self.engine_file))
+            tprint(f'TRT Engine Loaded from {self.engine_file} successfully.')
             return
         else:
-            tprint('Loading TRT Engine from {} failed.'.format(self.engine_file))
+            tprint(f'Loading TRT Engine from {self.engine_file} failed.')
 
     def __enter__(self):
         self.context = self.engine.create_execution_context()
