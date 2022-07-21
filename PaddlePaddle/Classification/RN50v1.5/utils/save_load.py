@@ -88,11 +88,13 @@ def load_params(prog, path, ignore_params=None):
     if ignore_params:
         all_var_names = [var.name for var in prog.list_vars()]
         ignore_list = filter(
-            lambda var: any([re.match(name, var) for name in ignore_params]),
-            all_var_names)
+            lambda var: any(re.match(name, var) for name in ignore_params),
+            all_var_names,
+        )
+
         ignore_set.update(list(ignore_list))
 
-    if len(ignore_set) > 0:
+    if ignore_set:
         for k in ignore_set:
             if k in state:
                 logging.warning(

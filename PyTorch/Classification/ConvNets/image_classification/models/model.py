@@ -104,15 +104,9 @@ class EntryPoint:
 
             def reshape(t, conv):
                 if conv:
-                    if len(t.shape) == 4:
-                        return t
-                    else:
-                        return t.view(t.shape[0], -1, 1, 1)
+                    return t if len(t.shape) == 4 else t.view(t.shape[0], -1, 1, 1)
                 else:
-                    if len(t.shape) == 4:
-                        return t.view(t.shape[0], t.shape[1])
-                    else:
-                        return t
+                    return t.view(t.shape[0], t.shape[1]) if len(t.shape) == 4 else t
 
             if state_dict_key_map_fn is not None:
                 state_dict = {

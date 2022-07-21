@@ -23,7 +23,7 @@ import numpy as np
 try:
     import pycuda.autoinit
     import pycuda.driver as cuda
-except (ImportError, Exception) as e:
+except Exception as e:
     logging.getLogger(__name__).warning(f"Problems with importing pycuda package; {e}")
 # pytype: enable=import-error
 
@@ -163,7 +163,7 @@ class TensorRTRunnerSession(BaseRunnerSession):
 
     def _set_dynamic_input_shapes(self, x_host):
         def _is_shape_dynamic(input_shape):
-            return any([dim is None or dim == -1 for dim in input_shape])
+            return any(dim is None or dim == -1 for dim in input_shape)
 
         for name in self._input_names:
             bindings_idx = self._engine[name]

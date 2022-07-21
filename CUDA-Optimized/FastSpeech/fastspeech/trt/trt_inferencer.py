@@ -58,7 +58,7 @@ class TRTInferencer(object):
 
         self.batch_size = data_loader.batch_size
 
-        self.plugins = dict()
+        self.plugins = {}
 
         self.data_loader_iter = iter(self.data_loader)
 
@@ -82,8 +82,7 @@ class TRTInferencer(object):
     def load(self, ckpt_file):
         # load latest checkpoint file if not defined.
         if not ckpt_file:
-            files_exist = glob.glob(os.path.join(self.ckpt_path, '*'))
-            if files_exist:
+            if files_exist := glob.glob(os.path.join(self.ckpt_path, '*')):
                 ckpt_file = max(files_exist, key=os.path.getctime)
 
         if ckpt_file:
@@ -93,10 +92,9 @@ class TRTInferencer(object):
             self.model.load_state_dict(
                 remove_module_in_state_dict(state_dict['model']))
 
-            tprint('[Load] Checkpoint \'{}\'. Step={}'.format(
-                ckpt_file, self.step))
+            tprint(f"[Load] Checkpoint \'{ckpt_file}\'. Step={self.step}")
         else:
-            tprint('No checkpoints in {}. Load skipped.'.format(self.ckpt_path))
+            tprint(f'No checkpoints in {self.ckpt_path}. Load skipped.')
 
     def load_plugin(self, path):
         ctypes.cdll.LoadLibrary(path)

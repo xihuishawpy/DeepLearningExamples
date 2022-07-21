@@ -174,7 +174,7 @@ def get_rec_iter(args, kv=None, dali_cpu=False):
                                   prefetch_queue = args.dali_prefetch_queue,
                                   nvjpeg_width_hint  = args.dali_nvjpeg_width_hint, 
                                   nvjpeg_height_hint = args.dali_nvjpeg_height_hint) for gpu_id in gpus]
-                                  
+
 
     if args.data_val:
         valpipes = [HybridValPipe(args           = args,
@@ -206,7 +206,10 @@ def get_rec_iter(args, kv=None, dali_cpu=False):
                 worker_val_examples += 1
 
     if args.num_examples < trainpipes[0].epoch_size("Reader"):
-        warnings.warn("{} training examples will be used, although full training set contains {} examples".format(args.num_examples, trainpipes[0].epoch_size("Reader")))
+        warnings.warn(
+            f'{args.num_examples} training examples will be used, although full training set contains {trainpipes[0].epoch_size("Reader")} examples'
+        )
+
     dali_train_iter = DALIClassificationIterator(trainpipes, args.num_examples // nWrk)
 
     if args.data_val:

@@ -66,8 +66,8 @@ def infer(hparam="infer.yaml",
     """
 
     hp.set_hparam(hparam, kwargs)
-    tprint("Hparams:\n{}".format(pp.pformat(hp)))
-    tprint("Device count: {}".format(torch.cuda.device_count()))
+    tprint(f"Hparams:\n{pp.pformat(hp)}")
+    tprint(f"Device count: {torch.cuda.device_count()}")
 
     # model
     model = Fastspeech(
@@ -90,38 +90,42 @@ def infer(hparam="infer.yaml",
         fused_layernorm=hp.fused_layernorm
     )
 
-    dataset = LJSpeechDataset(root_path=hp.dataset_path,
-                              meta_file=hp.meta_file,
-                              sr=hp.sr,
-                              n_fft=hp.n_fft,
-                              win_len=hp.win_len,
-                              hop_len=hp.hop_len,
-                              n_mels=hp.num_mels,
-                              mel_fmin=hp.mel_fmin,
-                              mel_fmax=hp.mel_fmax,
-                              exclude_mels=True,
-                              sort_by_length=True if hp.use_trt and hp.trt_multi_engine else False
-                              )
-    tprint("Dataset size: {}".format(len(dataset)))
+    dataset = LJSpeechDataset(
+        root_path=hp.dataset_path,
+        meta_file=hp.meta_file,
+        sr=hp.sr,
+        n_fft=hp.n_fft,
+        win_len=hp.win_len,
+        hop_len=hp.hop_len,
+        n_mels=hp.num_mels,
+        mel_fmin=hp.mel_fmin,
+        mel_fmax=hp.mel_fmax,
+        exclude_mels=True,
+        sort_by_length=bool(hp.use_trt and hp.trt_multi_engine),
+    )
 
-    data_loader = PadDataLoader(dataset,
-                                batch_size=hp.batch_size,
-                                num_workers=hp.n_workers,
-                                shuffle=False if hp.use_trt and hp.trt_multi_engine else True,
-                                drop_last=True,
-                                )
+    tprint(f"Dataset size: {len(dataset)}")
+
+    data_loader = PadDataLoader(
+        dataset,
+        batch_size=hp.batch_size,
+        num_workers=hp.n_workers,
+        shuffle=not hp.use_trt or not hp.trt_multi_engine,
+        drop_last=True,
+    )
+
 
     inferencer = get_inferencer(model, data_loader, device)
 
     try:
         n_iters = min(len(data_loader), n_iters) if n_iters else len(data_loader)
-        tprint("Num of iters: {}".format(n_iters))
+        tprint(f"Num of iters: {n_iters}")
         with inferencer:
             for i in range(n_iters):
-                    tprint("------------- INFERENCE : batch #{} -------------".format(i))
-                    with TimeElapsed(name="Inference Time", cuda_sync=True):
-                        out_batch = inferencer.infer()
-                        # tprint("Output:\n{}".format(pp.pformat(out_batch)))
+                tprint(f"------------- INFERENCE : batch #{i} -------------")
+                with TimeElapsed(name="Inference Time", cuda_sync=True):
+                    out_batch = inferencer.infer()
+                    # tprint("Output:\n{}".format(pp.pformat(out_batch)))
         tprint("Inference has been done.")
     except KeyboardInterrupt:
         tprint("Inference has been canceled.")

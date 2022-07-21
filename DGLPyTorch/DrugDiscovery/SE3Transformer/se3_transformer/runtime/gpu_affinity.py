@@ -54,8 +54,7 @@ class Device:
         affinity_list = [int(x) for x in affinity_string]
         affinity_list.reverse()  # so core 0 is in 0th element of list
 
-        ret = [i for i, e in enumerate(affinity_list) if e != 0]
-        return ret
+        return [i for i, e in enumerate(affinity_list) if e != 0]
 
 
 def get_thread_siblings_list():
@@ -69,8 +68,7 @@ def get_thread_siblings_list():
     for fname in pathlib.Path(path[0]).glob(path[1:]):
         with open(fname) as f:
             content = f.read().strip()
-            res = pattern.findall(content)
-            if res:
+            if res := pattern.findall(content):
                 pair = tuple(map(int, res[0]))
                 thread_siblings_list.append(pair)
     return thread_siblings_list
@@ -79,7 +77,7 @@ def get_thread_siblings_list():
 def check_socket_affinities(socket_affinities):
     # sets of cores should be either identical or disjoint
     for i, j in itertools.product(socket_affinities, socket_affinities):
-        if not set(i) == set(j) and not set(i).isdisjoint(set(j)):
+        if set(i) != set(j) and not set(i).isdisjoint(set(j)):
             raise RuntimeError(f"Sets of cores should be either identical or disjoint, " f"but got {i} and {j}.")
 
 
@@ -187,8 +185,10 @@ def set_socket_unique_affinity(gpu_id, nproc_per_node, mode, balanced=True):
     # compute minimal number of physical cores per GPU across all GPUs and
     # sockets, code assigns this number of cores per GPU if balanced == True
     min_physical_cores_per_gpu = min(
-        [len(cores) // len(gpus) for cores, gpus in socket_affinities_to_device_ids.items()]
+        len(cores) // len(gpus)
+        for cores, gpus in socket_affinities_to_device_ids.items()
     )
+
 
     for socket_affinity, device_ids in socket_affinities_to_device_ids.items():
         devices_per_group = len(device_ids)
@@ -321,5 +321,4 @@ def set_affinity(gpu_id, nproc_per_node, mode="socket_unique_continuous", balanc
     else:
         raise RuntimeError("Unknown affinity mode")
 
-    affinity = os.sched_getaffinity(0)
-    return affinity
+    return os.sched_getaffinity(0)

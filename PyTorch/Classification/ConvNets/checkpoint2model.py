@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     checkpoint = torch.load(args.checkpoint_path, map_location=torch.device("cpu"))
 
-    key = "state_dict" if not args.ema else "ema_state_dict"
+    key = "ema_state_dict" if args.ema else "state_dict"
     model_state_dict = {
         k[len("module.") :] if "module." in k else k: v
         for k, v in checkpoint["state_dict"].items()

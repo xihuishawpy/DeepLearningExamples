@@ -34,9 +34,11 @@ def to_gpu_async(cpu_tensor):
 
 
 def to_cpu_numpy(gpu_tensor):
-    if not isinstance(gpu_tensor, torch.Tensor):
-        return gpu_tensor
-    return gpu_tensor.detach().cpu().numpy()
+    return (
+        gpu_tensor.detach().cpu().numpy()
+        if isinstance(gpu_tensor, torch.Tensor)
+        else gpu_tensor
+    )
 
 def remove_module_in_state_dict(state_dict):
     """

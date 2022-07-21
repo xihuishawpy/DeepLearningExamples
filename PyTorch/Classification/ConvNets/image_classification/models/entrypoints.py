@@ -50,6 +50,8 @@ def nvidia_convnets_processing_utils():
     import requests
     import validators
 
+
+
     class Processing:
 
         @staticmethod
@@ -84,15 +86,19 @@ def nvidia_convnets_processing_utils():
             predictions = predictions.float().cpu().numpy()
             topN = np.argsort(-1*predictions, axis=-1)[:,:n]
             imgnet_classes = Processing.get_imgnet_classes()
-            
+
             results=[]
             for idx,case in enumerate(topN):
-                r = []
-                for c, v in zip(imgnet_classes[case], predictions[idx, case]):
-                    r.append((f"{c}", f"{100*v:.1f}%"))
+                r = [
+                    (f"{c}", f"{100*v:.1f}%")
+                    for c, v in zip(
+                        imgnet_classes[case], predictions[idx, case]
+                    )
+                ]
+
                 print(f"sample {idx}: {r}")
                 results.append(r)
-            
+
             return results
 
         @staticmethod
@@ -108,8 +114,7 @@ def nvidia_convnets_processing_utils():
                     "https://raw.githubusercontent.com/NVIDIA/DeepLearningExamples/master/PyTorch/Classification/ConvNets/LOC_synset_mapping.json", 
                     filename=imgnet_classes_json)
                 print("Downloading finished.")
-            imgnet_classes = np.array(json.load(open(imgnet_classes_json, "r")))
+            return np.array(json.load(open(imgnet_classes_json, "r")))
 
-            return imgnet_classes
 
     return Processing()

@@ -11,11 +11,11 @@ def format_step(step):
         return step
     s = ""
     if len(step) > 0:
-        s += "Epoch: {} ".format(step[0])
+        s += f"Epoch: {step[0]} "
     if len(step) > 1:
-        s += "Iteration: {} ".format(step[1])
+        s += f"Iteration: {step[1]} "
     if len(step) > 2:
-        s += "Validation Iteration: {} ".format(step[2])
+        s += f"Validation Iteration: {step[2]} "
     if len(step) == 0:
         s = "Summary:"
     return s

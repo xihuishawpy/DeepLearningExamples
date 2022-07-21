@@ -78,8 +78,7 @@ class Trainer(object):
         self.model.train()
         to_device_async(self.model, self.device)
         num_param = sum(param.numel() for param in model.parameters())
-        tprint('The number of {} parameters: {}'.format(
-            self.model_name, num_param))
+        tprint(f'The number of {self.model_name} parameters: {num_param}')
 
         # optimizer
         self.optimizer = optimizer_fn(model)
@@ -133,20 +132,20 @@ class Trainer(object):
             with torch.autograd.profiler.emit_nvtx(enabled=self.pyprof_enabled):
                 for i in range(self.step+1, self.final_steps + 1):
                     self.step = i
-                    tprint("------------- TRAIN step : {} -------------".format(i))
+                    tprint(f"------------- TRAIN step : {i} -------------")
 
                     if self.nvprof_iter_start and i == self.nvprof_iter_start:
                         profiler.start()
                         timer = TimeElapsed(name="Training time during profiling", format=":.6f")
                         timer.start()
 
-                    with Nvtx("step #{}".format(self.step)):
+                    with Nvtx(f"step #{self.step}"):
                         loss, meta = self.do_step()
 
                     if self.nvprof_iter_end and i == self.nvprof_iter_end:
                         profiler.stop()
                         timer.end()
-        
+
                     if self.lr_scheduler:
                         for param_group in self.optimizer.param_groups:
                             tprint("lr: {:06f}".format(param_group['lr']))
@@ -205,12 +204,10 @@ class Trainer(object):
         torch.save(state_dict, self.ckpt_path +
                    '/checkpoint_{:06d}.pt'.format(self.step))
 
-        tprint('[Save] Model "{}". Step={}.'.format(
-            self.model_name, self.step))
+        tprint(f'[Save] Model "{self.model_name}". Step={self.step}.')
 
     def load(self, load_optim=True):
-        files_exist = glob.glob(os.path.join(self.ckpt_path, '*'))
-        if files_exist:
+        if files_exist := glob.glob(os.path.join(self.ckpt_path, '*')):
             # load the latest created file.
             latest_file = max(files_exist, key=os.path.getctime)
             state_dict = torch.load(latest_file)
@@ -220,10 +217,9 @@ class Trainer(object):
             if load_optim:
                 self.optimizer.load_state_dict(state_dict['optim'])
 
-            tprint('[Load] Checkpoint \'{}\'. Step={}'.format(
-                latest_file, self.step))
+            tprint(f"[Load] Checkpoint \'{latest_file}\'. Step={self.step}")
         else:
-            tprint('No checkpoints in {}. Load skipped.'.format(self.ckpt_path))
+            tprint(f'No checkpoints in {self.ckpt_path}. Load skipped.')
 
     def console_log(self, tag, loss, meta):
         # console logging
@@ -233,14 +229,12 @@ class Trainer(object):
         tprint(msg)
 
     def tensorboard_log(self, tag, loss):
-        self.tbwriter.add_scalar(
-            '{}/loss'.format(tag), loss, global_step=self.step)
+        self.tbwriter.add_scalar(f'{tag}/loss', loss, global_step=self.step)
 
     @staticmethod
     def repeat(iterable, n_repeat=None):
         cnt = 0
         while n_repeat is None or cnt < n_repeat:
-            for x in iterable:
-                yield x
+            yield from iterable
             cnt += 1
         return StopIteration()

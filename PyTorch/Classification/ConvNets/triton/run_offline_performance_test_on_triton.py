@@ -47,9 +47,7 @@ def calculate_average_latency(r):
         "Server Compute Output",
         "Client Recv",
     ]
-    avg_latency = sum([int(r.get(f, 0)) for f in avg_sum_fields])
-
-    return avg_latency
+    return sum(int(r.get(f, 0)) for f in avg_sum_fields)
 
 
 def update_performance_data(results: List, batch_size: int, performance_partial_file: str):
@@ -80,12 +78,12 @@ def offline_performance(
         shared_memory: bool = False
 ):
     print("\n")
-    print(f"==== Static batching analysis start ====")
+    print("==== Static batching analysis start ====")
     print("\n")
 
     input_shapes = " ".join(map(lambda shape: f" --shape {shape}", input_shapes)) if input_shapes else ""
 
-    results: List[Dict] = list()
+    results: List[Dict] = []
     for batch_size in batch_sizes:
         print(f"Running performance tests for batch size: {batch_size}")
         performance_partial_file = f"triton_performance_partial_{batch_size}.csv"
@@ -122,7 +120,7 @@ def offline_performance(
     print("Performance results for static batching stored in: {0}".format(result_path))
 
     print("\n")
-    print(f"==== Analysis done ====")
+    print("==== Analysis done ====")
     print("\n")
 
 

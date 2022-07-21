@@ -55,7 +55,7 @@ class Fiber(dict):
         elif not isinstance(structure[0], FiberEl):
             structure = list(map(lambda t: FiberEl(*t), sorted(structure, key=lambda x: x[1])))
         self.structure = structure
-        super().__init__({d: m for d, m in self.structure})
+        super().__init__(dict(self.structure))
 
     @property
     def degrees(self):

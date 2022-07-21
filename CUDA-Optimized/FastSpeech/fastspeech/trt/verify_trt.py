@@ -53,8 +53,8 @@ def verify(hparam="trt.yaml",
            text=SAMPLE_TEXT,
            **kwargs):
     hp.set_hparam(hparam, kwargs)
-    tprint("Hparams:\n{}".format(pp.pformat(hp)))
-    tprint("Device count: {}".format(torch.cuda.device_count()))
+    tprint(f"Hparams:\n{pp.pformat(hp)}")
+    tprint(f"Device count: {torch.cuda.device_count()}")
 
     outs_trt, acts_trt = infer_trt(text)
     outs, acts = infer_pytorch(text)
@@ -70,16 +70,9 @@ def verify(hparam="trt.yaml",
         is_identical = diff.eq(0).all()
         errors = diff[diff.ne(0)]
         max_error = torch.max(torch.abs(errors)) if len(errors) > 0 else 0
-        print("# {} #\n\n[PyTorch]\n{}\n\n[TRT]: \n{}\n\n[Diff]: \n{}\n\n[Errors]: \n{}\n- identical? {}\n- {} errors out of {}\n- max: {}\n\n".format(name,
-                                                                                                                                                act, 
-                                                                                                                                                act_trt, 
-                                                                                                                                                diff, 
-                                                                                                                                                errors, 
-                                                                                                                                                is_identical, 
-                                                                                                                                                len(errors), 
-                                                                                                                                                len(diff),
-                                                                                                                                                max_error,
-                                                                                                                                                ))
+        print(
+            f"# {name} #\n\n[PyTorch]\n{act}\n\n[TRT]: \n{act_trt}\n\n[Diff]: \n{diff}\n\n[Errors]: \n{errors}\n- identical? {is_identical}\n- {len(errors)} errors out of {len(diff)}\n- max: {max_error}\n\n"
+        )
 
     # print("## PyTorch ##\n\n")
     # for name, act in pytorch.items():
@@ -90,17 +83,14 @@ def verify(hparam="trt.yaml",
     #     print("[{}]\ttrt:\n{}\n\n".format(name, act_trt))
 
 def join_dict(acts, acts_trt):
-    both = dict()
-    left = dict()
-    right = dict()
+    both = {}
+    left = {}
     for k in acts:
         if k in acts_trt:
             both[k] = (acts[k], acts_trt[k])
         else:
             left[k] = acts[k]
-    for k in acts_trt:
-        if k not in acts:
-            right[k] = acts_trt[k]
+    right = {k: acts_trt[k] for k in acts_trt if k not in acts}
     return both, left, right
 
 
@@ -147,7 +137,7 @@ def infer_trt(text):
                             validate_accuracy=True,
                             )
     with inferencer:
-        acts = dict()
+        acts = {}
         outs = inferencer.infer(acts=acts)
 
     return outs, acts
@@ -192,7 +182,7 @@ def infer_pytorch(text):
                                 use_fp16=hp.use_fp16,
                                 )
 
-        acts = dict()
+        acts = {}
         outs = inferencer.infer(acts=acts,
                                 seq_input_len=hp.trt_max_input_seq_len,
                                 seq_output_len=hp.trt_max_output_seq_len)

@@ -59,11 +59,7 @@ class FastSpeechInferencer(Inferencer):
         mel = mel.transpose(1, 2)
         mel_mask = mel_mask.squeeze(2)
 
-        outputs = dict()
-        outputs['mel'] = mel
-        outputs['mel_mask'] = mel_mask
-        outputs['text'] = inputs["text_norm"]
-
+        outputs = {'mel': mel, 'mel_mask': mel_mask, 'text': inputs["text_norm"]}
         if "mel" in inputs:
             outputs['mel_tgt'] = inputs["mel"]
 
@@ -77,14 +73,30 @@ class FastSpeechInferencer(Inferencer):
 
     def console_log(self, tag, output):
         # console logging
-        msg = ""
-        for key, value in sorted(output.items()):
-            msg += ',\t{}: {}'.format(key, value)
+        msg = "".join(f',\t{key}: {value}' for key, value in sorted(output.items()))
         tprint(msg)
 
     # TODO generalize
     def tensorboard_log(self, tag, output_tensor):
-        self.tbwriter.add_image('{}/{}'.format(tag, "mel"), imshow_to_buf(output_tensor['mel']), global_step=self.step)
-        self.tbwriter.add_image('{}/{}'.format(tag, "mel_tgt"), imshow_to_buf(output_tensor['mel_tgt']), global_step=self.step)
-        self.tbwriter.add_audio('{}/{}'.format(tag, "wav_tgt"), output_tensor['wav_tgt'], global_step=self.step, sample_rate=int(output_tensor['sr']))
-        self.tbwriter.add_text('{}/{}'.format(tag, "text"), output_tensor['text'], global_step=self.step)
+        self.tbwriter.add_image(
+            f'{tag}/mel',
+            imshow_to_buf(output_tensor['mel']),
+            global_step=self.step,
+        )
+
+        self.tbwriter.add_image(
+            f'{tag}/mel_tgt',
+            imshow_to_buf(output_tensor['mel_tgt']),
+            global_step=self.step,
+        )
+
+        self.tbwriter.add_audio(
+            f'{tag}/wav_tgt',
+            output_tensor['wav_tgt'],
+            global_step=self.step,
+            sample_rate=int(output_tensor['sr']),
+        )
+
+        self.tbwriter.add_text(
+            f'{tag}/text', output_tensor['text'], global_step=self.step
+        )

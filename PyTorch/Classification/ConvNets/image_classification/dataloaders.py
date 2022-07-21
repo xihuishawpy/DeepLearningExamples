@@ -44,8 +44,7 @@ try:
     import nvidia.dali.ops as ops
     import nvidia.dali.types as types
 
-    DATA_BACKEND_CHOICES.append("dali-gpu")
-    DATA_BACKEND_CHOICES.append("dali-cpu")
+    DATA_BACKEND_CHOICES.extend(("dali-gpu", "dali-cpu"))
 except ImportError:
     print(
         "Please install DALI from https://www.github.com/NVIDIA/DALI to run this example."
@@ -201,14 +200,14 @@ class HybridValPipe(Pipeline):
 
 
 class DALIWrapper(object):
-    def gen_wrapper(dalipipeline, num_classes, one_hot, memory_format):
-        for data in dalipipeline:
+    def gen_wrapper(self, num_classes, one_hot, memory_format):
+        for data in self:
             input = data[0]["data"].contiguous(memory_format=memory_format)
             target = torch.reshape(data[0]["label"], [-1]).cuda().long()
             if one_hot:
                 target = expand(num_classes, torch.float, target)
             yield input, target
-        dalipipeline.reset()
+        self.reset()
 
     def __init__(self, dalipipeline, num_classes, one_hot, memory_format):
         self.dalipipeline = dalipipeline
@@ -347,7 +346,7 @@ def expand(num_classes, dtype, tensor):
 
 
 class PrefetchedWrapper(object):
-    def prefetched_loader(loader, num_classes, one_hot):
+    def prefetched_loader(self, num_classes, one_hot):
         mean = (
             torch.tensor([0.485 * 255, 0.456 * 255, 0.406 * 255])
             .cuda()
@@ -362,7 +361,7 @@ class PrefetchedWrapper(object):
         stream = torch.cuda.Stream()
         first = True
 
-        for next_input, next_target in loader:
+        for next_input, next_target in self:
             with torch.cuda.stream(stream):
                 next_input = next_input.cuda(non_blocking=True)
                 next_target = next_target.cuda(non_blocking=True)

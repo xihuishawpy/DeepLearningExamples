@@ -159,7 +159,7 @@ def main():
 
     processes = []
 
-    for local_rank in range(0, args.nproc_per_node):
+    for local_rank in range(args.nproc_per_node):
         # each process's rank
         dist_rank = args.nproc_per_node * args.node_rank + local_rank
         current_env["RANK"] = str(dist_rank)
@@ -170,9 +170,7 @@ def main():
 
         print(cmd)
 
-        stdout = (
-            None if local_rank == 0 else open("GPU_" + str(local_rank) + ".log", "w")
-        )
+        stdout = None if local_rank == 0 else open(f"GPU_{str(local_rank)}.log", "w")
 
         process = subprocess.Popen(cmd, env=current_env, stdout=stdout, stderr=stdout)
         processes.append(process)
@@ -196,15 +194,7 @@ def main():
                     p.terminate()
             exit(1)
 
-    except KeyboardInterrupt:
-        for p in processes:
-            p.terminate()
-        raise
-    except SystemExit:
-        for p in processes:
-            p.terminate()
-        raise
-    except:
+    except (KeyboardInterrupt, SystemExit):
         for p in processes:
             p.terminate()
         raise

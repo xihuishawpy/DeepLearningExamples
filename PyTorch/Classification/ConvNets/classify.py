@@ -35,7 +35,7 @@ from image_classification.models import (
 )
 
 def available_models():
-    models = {
+    return {
         m.name: m
         for m in [
             resnet50,
@@ -49,7 +49,6 @@ def available_models():
             efficientnet_quant_b4,
         ]
     }
-    return models
 
 def add_parser_arguments(parser):
     model_names = available_models().keys()

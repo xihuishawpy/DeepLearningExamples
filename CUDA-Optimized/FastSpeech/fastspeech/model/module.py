@@ -82,14 +82,23 @@ class FFTBlocks(nn.Module):
             get_sinusoid_encoding_table(n_position, d_model, padding_idx=0),
             freeze=True)
 
-        self.layer_stack = nn.ModuleList([FFTBlock(
-            d_model, d_inner, n_head, d_k, d_v,
-            fft_conv1d_kernel=fft_conv1d_kernel,
-            fft_conv1d_padding=fft_conv1d_padding,
-            dropout=dropout,
-            fused_layernorm=fused_layernorm,
-            name="{}.layer_stack.{}".format(self.name, i),
-        ) for i in range(n_layers)])
+        self.layer_stack = nn.ModuleList(
+            [
+                FFTBlock(
+                    d_model,
+                    d_inner,
+                    n_head,
+                    d_k,
+                    d_v,
+                    fft_conv1d_kernel=fft_conv1d_kernel,
+                    fft_conv1d_padding=fft_conv1d_padding,
+                    dropout=dropout,
+                    fused_layernorm=fused_layernorm,
+                    name=f"{self.name}.layer_stack.{i}",
+                )
+                for i in range(n_layers)
+            ]
+        )
 
     def forward(self, seq, pos, return_attns=False, acts=None):
 
@@ -104,7 +113,7 @@ class FFTBlocks(nn.Module):
         output = seq + pos_enc
 
         if acts is not None:
-            acts["act.{}.add_pos_enc".format(self.name)] = output
+            acts[f"act.{self.name}.add_pos_enc"] = output
 
         for i, layer in enumerate(self.layer_stack):
             output, slf_attn = layer(
@@ -116,7 +125,7 @@ class FFTBlocks(nn.Module):
                 slf_attn_list += [slf_attn]
 
             if acts is not None:
-                acts['act.{}.layer_stack.{}'.format(self.name, i)] = output
+                acts[f'act.{self.name}.layer_stack.{i}'] = output
 
         return output, non_pad_mask
 
@@ -154,8 +163,10 @@ class FFTBlock(torch.nn.Module):
             d_k=d_k,
             d_v=d_v,
             dropout=dropout,
-            name="{}.slf_attn".format(name),
-            fused_layernorm=fused_layernorm)
+            name=f"{name}.slf_attn",
+            fused_layernorm=fused_layernorm,
+        )
+
 
         self.pos_ffn = PositionwiseFeedForward(
             d_in=d_model,
@@ -163,8 +174,9 @@ class FFTBlock(torch.nn.Module):
             fft_conv1d_kernel=fft_conv1d_kernel,
             fft_conv1d_padding=fft_conv1d_padding,
             dropout=dropout,
-            name="{}.pos_ffn".format(name),
-            fused_layernorm=fused_layernorm)
+            name=f"{name}.pos_ffn",
+            fused_layernorm=fused_layernorm,
+        )
 
     @Nvtx("fftblock", enabled=False)
     def forward(self, input, non_pad_mask=None, slf_attn_mask=None, acts=None):
@@ -195,8 +207,9 @@ class MultiHeadAttention(nn.Module):
         nn.init.xavier_normal_(self.linear.weight)
 
         self.attention = ScaledDotProductAttention(
-            temperature=np.power(d_k, 0.5),
-            name="{}.scaled_dot".format(self.name))
+            temperature=np.power(d_k, 0.5), name=f"{self.name}.scaled_dot"
+        )
+
 
         self.layer_norm = apex.normalization.FusedLayerNorm(
             d_model) if fused_layernorm else nn.LayerNorm(d_model)
@@ -217,7 +230,7 @@ class MultiHeadAttention(nn.Module):
             x = self.linear(x)  # (b, t, n_heads * h)
 
             if acts is not None:
-                acts['act.{}.linear'.format(self.name)] = x
+                acts[f'act.{self.name}.linear'] = x
 
             x = x.view(bs, seq_len, self.n_head, d_out)  # (b, t, n_heads, h)
             x = x.permute(2, 0, 1, 3).contiguous().view(self.n_head * bs, seq_len, d_out)  # (n * b, t, h)
@@ -237,7 +250,7 @@ class MultiHeadAttention(nn.Module):
             bs, seq_len, self.n_head * self.d_v)  # (b, t, n * d_k)
 
         if acts is not None:
-            acts['act.{}.scaled_dot'.format(self.name)] = output
+            acts[f'act.{self.name}.scaled_dot'] = output
 
         with Nvtx("fc", enabled=False):
             output = self.fc(output)
@@ -248,13 +261,13 @@ class MultiHeadAttention(nn.Module):
         output += residual
 
         if acts is not None:
-            acts['act.{}.residual'.format(self.name)] = output
+            acts[f'act.{self.name}.residual'] = output
 
         with Nvtx("layer norm", enabled=False):
             output = self.layer_norm(output)
 
         if acts is not None:
-            acts['act.{}.ln'.format(self.name)] = output
+            acts[f'act.{self.name}.ln'] = output
 
         return output, attn
 
@@ -331,25 +344,25 @@ class PositionwiseFeedForward(nn.Module):
         output = self.w_1(output)
 
         if acts is not None:
-            acts['act.{}.conv1'.format(self.name)] = output
+            acts[f'act.{self.name}.conv1'] = output
 
         output = F.relu(output)
         output = self.w_2(output)
 
         if acts is not None:
-            acts['act.{}.conv2'.format(self.name)] = output
+            acts[f'act.{self.name}.conv2'] = output
 
         output = output.transpose(1, 2)
         output = self.dropout(output)
         output += residual
 
         if acts is not None:
-            acts['act.{}.residual'.format(self.name)] = output
+            acts[f'act.{self.name}.residual'] = output
 
         output = self.layer_norm(output)
 
         if acts is not None:
-            acts['act.{}.ln'.format(self.name)] = output
+            acts[f'act.{self.name}.ln'] = output
 
         return output
 
@@ -428,9 +441,9 @@ class LengthRegulator(nn.Module):
         # TODO: parallelize the loop.
         for i in range(input.size(0)):
             repeats = duration[i].float() * alpha
-            with Nvtx("round #{}".format(i), enabled=False):
+            with Nvtx(f"round #{i}", enabled=False):
                 repeats = torch.round(repeats).long()
-            with Nvtx("repeat #{}".format(i), enabled=False):
+            with Nvtx(f"repeat #{i}", enabled=False):
                 output.append(torch.repeat_interleave(
                     input[i], repeats, dim=0))
             output_pos.append(torch.from_numpy(

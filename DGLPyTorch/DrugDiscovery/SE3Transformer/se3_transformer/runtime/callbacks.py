@@ -121,7 +121,7 @@ class QM9LRSchedulerCallback(LRSchedulerCallback):
         self.epochs = epochs
 
     def get_scheduler(self, optimizer, args):
-        min_lr = args.min_learning_rate if args.min_learning_rate else args.learning_rate / 10.0
+        min_lr = args.min_learning_rate or args.learning_rate / 10.0
         return torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, self.epochs, eta_min=min_lr)
 
 
@@ -169,6 +169,6 @@ class PerformanceCallback(BaseCallback):
             f"total_time_{self.mode}": timestamps[-1] - timestamps[0],
         }
         for level in [90, 95, 99]:
-            stats.update({f"latency_{self.mode}_{level}": np.percentile(deltas, level)})
+            stats[f"latency_{self.mode}_{level}"] = np.percentile(deltas, level)
 
         return stats

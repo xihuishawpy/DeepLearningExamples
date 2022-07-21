@@ -29,9 +29,7 @@ from setuptools import setup, find_packages
 def get_requirements(filename='requirements.txt'):
     deps = []
     with open(filename, 'r') as f:
-        for pkg in f.readlines():
-            if pkg.strip():
-                deps.append(pkg)
+        deps.extend(pkg for pkg in f if pkg.strip())
     return deps
 
 

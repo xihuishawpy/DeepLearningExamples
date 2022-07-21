@@ -58,16 +58,13 @@ class LayerBuilder(object):
         if act:
             layers.append(("act", self.activation()))
 
-        if bn or act:
-            return nn.Sequential(OrderedDict(layers))
-        else:
-            return conv
+        return nn.Sequential(OrderedDict(layers)) if bn or act else conv
 
     def convDepSep(
         self, kernel_size, in_planes, out_planes, stride=1, bn=False, act=False
     ):
         """3x3 depthwise separable convolution with padding"""
-        c = self.conv(
+        return self.conv(
             kernel_size,
             in_planes,
             out_planes,
@@ -76,35 +73,30 @@ class LayerBuilder(object):
             bn=bn,
             act=act,
         )
-        return c
 
     def conv3x3(self, in_planes, out_planes, stride=1, groups=1, bn=False, act=False):
         """3x3 convolution with padding"""
-        c = self.conv(
+        return self.conv(
             3, in_planes, out_planes, groups=groups, stride=stride, bn=bn, act=act
         )
-        return c
 
     def conv1x1(self, in_planes, out_planes, stride=1, groups=1, bn=False, act=False):
         """1x1 convolution with padding"""
-        c = self.conv(
+        return self.conv(
             1, in_planes, out_planes, groups=groups, stride=stride, bn=bn, act=act
         )
-        return c
 
     def conv7x7(self, in_planes, out_planes, stride=1, groups=1, bn=False, act=False):
         """7x7 convolution with padding"""
-        c = self.conv(
+        return self.conv(
             7, in_planes, out_planes, groups=groups, stride=stride, bn=bn, act=act
         )
-        return c
 
     def conv5x5(self, in_planes, out_planes, stride=1, groups=1, bn=False, act=False):
         """5x5 convolution with padding"""
-        c = self.conv(
+        return self.conv(
             5, in_planes, out_planes, groups=groups, stride=stride, bn=bn, act=act
         )
-        return c
 
     def batchnorm(self, planes, zero_init=False):
         bn_cfg = {}
@@ -194,11 +186,7 @@ class EMA:
         self.module_ema = module_ema
 
     def __call__(self, module, step=None):
-        if step is None:
-            mu = self.mu
-        else:
-            mu = min(self.mu, (1.0 + step) / (10 + step))
-
+        mu = self.mu if step is None else min(self.mu, (1.0 + step) / (10 + step))
         def strip_module(s: str) -> str:
             return s
 
@@ -248,9 +236,8 @@ class SequentialSqueezeAndExcitation(SqueezeAndExcitation):
         out = self._attention(x)
         if not self.quantized:
             return out * x
-        else:
-            x_quant = self.mul_a_quantizer(out)
-            return x_quant * self.mul_b_quantizer(x)
+        x_quant = self.mul_a_quantizer(out)
+        return x_quant * self.mul_b_quantizer(x)
 
 
 class SequentialSqueezeAndExcitationTRT(SqueezeAndExcitationTRT):
@@ -273,9 +260,8 @@ class SequentialSqueezeAndExcitationTRT(SqueezeAndExcitationTRT):
         out = self._attention(x)
         if not self.quantized:
             return out * x
-        else:
-            x_quant = self.mul_a_quantizer(out)
-            return x_quant * self.mul_b_quantizer(x)
+        x_quant = self.mul_a_quantizer(out)
+        return x_quant * self.mul_b_quantizer(x)
 
 
 class StochasticDepthResidual(nn.Module):
@@ -287,15 +273,14 @@ class StochasticDepthResidual(nn.Module):
     def forward(self, residual: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
         if not self.training:
             return torch.add(residual, other=x)
-        else:
-            with torch.no_grad():
-                F.dropout(
-                    self.mask,
-                    p=1 - self.survival_prob,
-                    training=self.training,
-                    inplace=False,
-                )
-            return torch.addcmul(residual, self.mask, x)
+        with torch.no_grad():
+            F.dropout(
+                self.mask,
+                p=1 - self.survival_prob,
+                training=self.training,
+                inplace=False,
+            )
+        return torch.addcmul(residual, self.mask, x)
 
 class Flatten(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:

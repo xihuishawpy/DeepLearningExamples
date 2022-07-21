@@ -45,12 +45,12 @@ def init_predictor(args):
     max_batch_size = args.batch_size
     assert precision in ['FP32', 'FP16', 'INT8'], \
         'precision should be FP32/FP16/INT8'
-    if precision == 'INT8':
-        precision_mode = PrecisionType.Int8
-    elif precision == 'FP16':
+    if precision == 'FP16':
         precision_mode = PrecisionType.Half
     elif precision == 'FP32':
         precision_mode = PrecisionType.Float32
+    elif precision == 'INT8':
+        precision_mode = PrecisionType.Int8
     else:
         raise NotImplementedError
     predictor_config.enable_tensorrt_engine(
@@ -60,8 +60,7 @@ def init_predictor(args):
         precision_mode=precision_mode,
         use_static=args.trt_use_static,
         use_calib_mode=args.trt_use_calib_mode)
-    predictor = create_predictor(predictor_config)
-    return predictor
+    return create_predictor(predictor_config)
 
 
 def predict(predictor, input_data):
@@ -89,7 +88,7 @@ def predict(predictor, input_data):
     results = []
     # get out data from output tensor
     output_names = predictor.get_output_names()
-    for i, name in enumerate(output_names):
+    for name in output_names:
         output_tensor = predictor.get_output_handle(name)
         output_data = output_tensor.copy_to_cpu()
         results.append(output_data)
@@ -139,7 +138,7 @@ def benchmark_dataset(args):
     latency = np.array(latency) * 1000
     quantile = np.quantile(latency, [0.9, 0.95, 0.99])
 
-    statistics = {
+    return {
         'precision': args.trt_precision,
         'batch_size': batch_size,
         'throughput': total_images / (end - start),
@@ -149,7 +148,6 @@ def benchmark_dataset(args):
         'eval_latency_p95': quantile[1],
         'eval_latency_p99': quantile[2],
     }
-    return statistics
 
 
 def benchmark_synthat(args):
@@ -184,7 +182,7 @@ def benchmark_synthat(args):
     latency = np.array(latency) * 1000
     quantile = np.quantile(latency, [0.9, 0.95, 0.99])
 
-    statistics = {
+    return {
         'precision': args.trt_precision,
         'batch_size': batch_size,
         'throughput': args.benchmark_steps * batch_size / (end - start),
@@ -193,7 +191,6 @@ def benchmark_synthat(args):
         'eval_latency_p95': quantile[1],
         'eval_latency_p99': quantile[2],
     }
-    return statistics
 
 
 def main(args):

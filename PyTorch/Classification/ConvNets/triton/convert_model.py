@@ -116,11 +116,11 @@ def _get_args():
 def main():
     args = _get_args()
 
-    log_level = logging.INFO if not args.verbose else logging.DEBUG
+    log_level = logging.DEBUG if args.verbose else logging.INFO
     log_format = "%(asctime)s %(levelname)s %(name)s %(message)s"
     logging.basicConfig(level=log_level, format=log_format)
 
-    LOGGER.info(f"args:")
+    LOGGER.info("args:")
     for key, value in vars(args).items():
         LOGGER.info(f"    {key} = {value}")
 
@@ -142,11 +142,9 @@ def main():
     LOGGER.info("inputs: %s", model.inputs)
     LOGGER.info("outputs: %s", model.outputs)
 
-    if Converter:  # if conversion is needed
-        # dataloader must much source model precision - so not recovering it yet
-        if args.dataloader is not None:
-            get_dataloader_fn = load_from_file(args.dataloader, label="dataloader", target=DATALOADER_FN_NAME)
-            dataloader_fn = ArgParserGenerator(get_dataloader_fn).from_args(args)
+    if Converter and args.dataloader is not None:
+        get_dataloader_fn = load_from_file(args.dataloader, label="dataloader", target=DATALOADER_FN_NAME)
+        dataloader_fn = ArgParserGenerator(get_dataloader_fn).from_args(args)
 
     # recover precision to that requested by user
     args.precision = requested_model_precision.value

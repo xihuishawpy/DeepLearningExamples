@@ -108,7 +108,7 @@ class SE3Transformer(nn.Module):
             self.fuse_level = ConvSE3FuseLevel.FULL if tensor_cores else ConvSE3FuseLevel.PARTIAL
 
         graph_modules = []
-        for i in range(num_layers):
+        for _ in range(num_layers):
             graph_modules.append(AttentionBlockSE3(fiber_in=fiber_in,
                                                    fiber_out=fiber_hidden,
                                                    fiber_edge=fiber_edge,
@@ -209,8 +209,7 @@ class SE3TransformerPooled(nn.Module):
 
     def forward(self, graph, node_feats, edge_feats, basis=None):
         feats = self.transformer(graph, node_feats, edge_feats, basis).squeeze(-1)
-        y = self.mlp(feats).squeeze(-1)
-        return y
+        return self.mlp(feats).squeeze(-1)
 
     @staticmethod
     def add_argparse_args(parent_parser):

@@ -30,9 +30,7 @@ Revised based on apex/apex/amp/_initialize.py
 """
 
 def _applier(value, fn):
-    if isinstance(value, torch.cuda.FloatTensor):
-        return fn(value)
-    elif isinstance(value, torch.cuda.HalfTensor):
+    if isinstance(value, (torch.cuda.FloatTensor, torch.cuda.HalfTensor)):
         return fn(value)
     elif isinstance(value, dict):
         return dict({k : _applier(v, fn) for k, v in value.items()})

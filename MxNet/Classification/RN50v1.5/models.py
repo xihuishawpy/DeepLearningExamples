@@ -185,9 +185,9 @@ class Transpose(HybridBlock):
         super().__init__()
         supported_layouts = ['NCHW', 'NHWC']
         if from_layout not in supported_layouts:
-            raise ValueError('Not prepared to handle layout: {}'.format(from_layout))
+            raise ValueError(f'Not prepared to handle layout: {from_layout}')
         if to_layout not in supported_layouts:
-            raise ValueError('Not prepared to handle layout: {}'.format(to_layout))
+            raise ValueError(f'Not prepared to handle layout: {to_layout}')
         self.from_layout = from_layout
         self.to_layout = to_layout
 
@@ -203,9 +203,9 @@ class Transpose(HybridBlock):
     def __repr__(self):
         s = '{name}({content})'
         if self.from_layout == self.to_layout:
-            content = 'passthrough ' + self.from_layout
+            content = f'passthrough {self.from_layout}'
         else:
-            content = self.from_layout + ' -> ' + self.to_layout
+            content = f'{self.from_layout} -> {self.to_layout}'
         return s.format(name=self.__class__.__name__,
                         content=content)
 
@@ -394,13 +394,31 @@ class ResNet(HybridBlock):
 
     def make_layer(self, builder, block, layers, channels, stride,
                     in_channels=0, resnext_groups=None):
-        layer = []
-        layer.append(block(builder, channels, stride, channels != in_channels,
-                            in_channels=in_channels, version=self.version,
-                            resnext_groups=resnext_groups))
-        for _ in range(layers-1):
-            layer.append(block(builder, channels, 1, False, in_channels=channels,
-                               version=self.version, resnext_groups=resnext_groups))
+        layer = [
+            block(
+                builder,
+                channels,
+                stride,
+                channels != in_channels,
+                in_channels=in_channels,
+                version=self.version,
+                resnext_groups=resnext_groups,
+            )
+        ]
+
+        layer.extend(
+            block(
+                builder,
+                channels,
+                1,
+                False,
+                in_channels=channels,
+                version=self.version,
+                resnext_groups=resnext_groups,
+            )
+            for _ in range(layers - 1)
+        )
+
         return builder.sequence(*layer)
 
     def hybrid_forward(self, F, x):
@@ -431,11 +449,18 @@ class Xception(HybridBlock):
                 last_channels = channels
 
             for i, block_definition in enumerate(definition2):
-                features.append(XceptionBlock(builder, block_definition, in_channels=last_channels,
-                                              relu_at_beginning=False if i == 0 else True))
+                features.append(
+                    XceptionBlock(
+                        builder,
+                        block_definition,
+                        in_channels=last_channels,
+                        relu_at_beginning=i != 0,
+                    )
+                )
+
                 last_channels = list(filter(lambda x: x > 0, block_definition))[-1]
 
-            for i, channels in enumerate(definition3):
+            for channels in definition3:
                 features += [
                     builder.separable_conv(channels, 3, in_channels=last_channels),
                     builder.batchnorm_relu(),
@@ -461,15 +486,21 @@ resnet_spec = {18: (ResNetBasicBlock, [2, 2, 2, 2], [64, 64, 128, 256, 512]),
                152: (ResNetBottleNeck, [3, 8, 36, 3], [64, 256, 512, 1024, 2048])}
 
 def create_resnet(builder, version, num_layers=50, resnext=False, classes=1000):
-    assert num_layers in resnet_spec, \
-        "Invalid number of layers: {}. Options are {}".format(
-            num_layers, str(resnet_spec.keys()))
+    assert (
+        num_layers in resnet_spec
+    ), f"Invalid number of layers: {num_layers}. Options are {str(resnet_spec.keys())}"
+
     block_class, layers, channels = resnet_spec[num_layers]
     assert not resnext or num_layers >= 50, \
         "Cannot create resnext with less then 50 layers"
-    net = ResNet(builder, block_class, layers, channels, version=version,
-                 resnext_groups=args.num_groups if resnext else None)
-    return net
+    return ResNet(
+        builder,
+        block_class,
+        layers,
+        channels,
+        version=version,
+        resnext_groups=args.num_groups if resnext else None,
+    )
 
 class fp16_model(mx.gluon.block.HybridBlock):
     def __init__(self, net, **kwargs):

@@ -37,7 +37,7 @@ def get_shapes_with_dynamic_axes(dataloader, batch_size_dim=0):
         for k, v in t.items():
             shape = list(v.shape)
             for dim, s in enumerate(shape):
-                if shapes[k][dim] != -1 and shapes[k][dim] != s:
+                if shapes[k][dim] not in [-1, s]:
                     shapes[k][dim] = -1
 
     ## get all shapes from input and output tensors
@@ -74,13 +74,13 @@ def get_dynamic_axes(dataloader, batch_size_dim=0):
     for k, shape in all_shapes.items():
         for idx, s in enumerate(shape):
             if s == -1:
-                dynamic_axes[k] = {idx: k + "_" + str(idx)}
+                dynamic_axes[k] = {idx: f"{k}_{str(idx)}"}
 
     for k, v in all_shapes.items():
         if k in dynamic_axes:
-            dynamic_axes[k].update({batch_size_dim: "batch_size_" + str(batch_size_dim)})
+            dynamic_axes[k].update({batch_size_dim: f"batch_size_{str(batch_size_dim)}"})
         else:
-            dynamic_axes[k] = {batch_size_dim: "batch_size_" + str(batch_size_dim)}
+            dynamic_axes[k] = {batch_size_dim: f"batch_size_{str(batch_size_dim)}"}
 
     return dynamic_axes
 
@@ -104,15 +104,15 @@ def get_input_shapes(dataloader, max_batch_size=1) -> Dict[str, ShapeSpec]:
         for k, v in x.items():
             shape = v.shape
             counters[k][shape] += 1
-            min_shapes[k] = tuple([min(a, b) for a, b in zip(min_shapes[k], shape)])
-            max_shapes[k] = tuple([max(a, b) for a, b in zip(max_shapes[k], shape)])
+            min_shapes[k] = tuple(min(a, b) for a, b in zip(min_shapes[k], shape))
+            max_shapes[k] = tuple(max(a, b) for a, b in zip(max_shapes[k], shape))
 
     opt_shapes: Dict[str, tuple] = {}
     for k, v in counters.items():
         opt_shapes[k] = v.most_common(1)[0][0]
 
     shapes = {}
-    for k in opt_shapes.keys():  # same keys in min_shapes and max_shapes
+    for k in opt_shapes:  # same keys in min_shapes and max_shapes
         shapes[k] = ShapeSpec(
             min=(1,) + min_shapes[k][1:],
             max=(max_batch_size,) + max_shapes[k][1:],

@@ -34,14 +34,14 @@ class PadDataLoader(DataLoader):
         Apply zero-padding.
         """
         # TODO refactor
-        result = dict()
+        result = {}
         for key in batch[0].keys():
             # apply padding on dataset
             sub_batch = [elem[key] for elem in batch]
             # check diff dims
             if not isinstance(sub_batch[0], np.ndarray):
                 # if list of float or int
-                assert all([type(x) == type(sub_batch[0]) for x in sub_batch[1:]]), sub_batch
+                assert all(type(x) == type(sub_batch[0]) for x in sub_batch[1:]), sub_batch
                 if isinstance(sub_batch[0], int):
                     sub_batch = torch.LongTensor(sub_batch)
                 elif isinstance(sub_batch[0], float):

@@ -47,9 +47,7 @@ def calculate_average_latency(r):
         "Server Compute Output",
         "Client Recv",
     ]
-    avg_latency = sum([int(r.get(f, 0)) for f in avg_sum_fields])
-
-    return avg_latency
+    return sum(int(r.get(f, 0)) for f in avg_sum_fields)
 
 
 def update_performance_data(results: List, performance_file: str):
@@ -79,13 +77,13 @@ def online_performance(
         shared_memory: bool = False
 ):
     print("\n")
-    print(f"==== Dynamic batching analysis start ====")
+    print("==== Dynamic batching analysis start ====")
     print("\n")
 
     input_shapes = " ".join(map(lambda shape: f" --shape {shape}", input_shapes)) if input_shapes else ""
 
-    print(f"Running performance tests for dynamic batching")
-    performance_file = f"triton_performance_dynamic_partial.csv"
+    print("Running performance tests for dynamic batching")
+    performance_file = "triton_performance_dynamic_partial.csv"
 
     max_batch_size = max(batch_sizes)
     max_total_requests = 2 * max_batch_size * triton_instances * triton_gpu_engine_count
@@ -114,7 +112,7 @@ def online_performance(
         print(f"Failed running performance tests. Perf client failed with exit code {result}")
         sys.exit(1)
 
-    results = list()
+    results = []
     update_performance_data(results=results, performance_file=performance_file)
 
     results = sort_results(results=results)
@@ -127,7 +125,7 @@ def online_performance(
     print("Performance results for dynamic batching stored in: {0}".format(result_path))
 
     print("\n")
-    print(f"==== Analysis done ====")
+    print("==== Analysis done ====")
     print("\n")
 
 

@@ -82,7 +82,7 @@ class LJSpeechDataset(Dataset):
 
     def __getitem__(self, idx):
         name = self.metas.iloc[idx, 0]
-        path = "{}/wavs/{}.wav".format(self.root_path, name)
+        path = f"{self.root_path}/wavs/{name}.wav"
 
         # Text normalization
         text = self.metas.iloc[idx, 1]
@@ -103,11 +103,11 @@ class LJSpeechDataset(Dataset):
         if not self.exclude_mels:
             wav, sr = librosa.load(path, sr=self.sr)  # wav is [-1.0, 1.0]
             if sr != self.sr:
-                raise ValueError("{} SR doesn't match target {} SR".format(sr, self.sr))
+                raise ValueError(f"{sr} SR doesn't match target {self.sr} SR")
 
             # Audio processing
             wav, _ = librosa.effects.trim(wav, frame_length=self.win_len, hop_length=self.hop_len)
-            
+
             if self.mels_path:
                 mel = np.load(os.path.join(self.mels_path, name + ".mel.npy"))
             else:
@@ -127,7 +127,7 @@ class LJSpeechDataset(Dataset):
                 "mel": mel,
                 "mel_len": mel.shape[-1],
             }
-            data.update(data_mel)
+            data |= data_mel
 
         if self.aligns_path:
             aligns = np.load(os.path.join(self.aligns_path, name + ".align.npy"))
@@ -154,8 +154,8 @@ def preprocess_mel(hparam="base.yaml", **kwargs):
     """
 
     hp.set_hparam(hparam, kwargs)
-    tprint("Hparams:\n{}".format(pp.pformat(hp)))
-    
+    tprint(f"Hparams:\n{pp.pformat(hp)}")
+
     pathlib.Path(hp.mels_path).mkdir(parents=True, exist_ok=True)
 
     dataset = LJSpeechDataset(hp.dataset_path, mels_path=None)

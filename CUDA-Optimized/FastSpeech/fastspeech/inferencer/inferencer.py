@@ -58,7 +58,7 @@ class Inferencer(object):
         self.model.eval()
         to_device_async(self.model, self.device)
         num_param = sum(param.numel() for param in model.parameters())
-        tprint('The number of {} parameters: {}'.format(self.model_name, num_param))
+        tprint(f'The number of {self.model_name} parameters: {num_param}')
 
         # precision
         if self.use_fp16:
@@ -102,8 +102,7 @@ class Inferencer(object):
     def load(self, ckpt_file):
         # load latest checkpoint file if not defined.
         if not ckpt_file:
-            files_exist = glob.glob(os.path.join(self.ckpt_path, '*'))
-            if files_exist:
+            if files_exist := glob.glob(os.path.join(self.ckpt_path, '*')):
                 ckpt_file = max(files_exist, key=os.path.getctime)
 
         if ckpt_file:
@@ -112,9 +111,9 @@ class Inferencer(object):
             self.step = state_dict['step']
             self.model.load_state_dict(state_dict['model'])
 
-            tprint('[Load] Checkpoint \'{}\'. Step={}'.format(ckpt_file, self.step))
+            tprint(f"[Load] Checkpoint \'{ckpt_file}\'. Step={self.step}")
         else:
-            tprint('No checkpoints in {}. Load skipped.'.format(self.ckpt_path))
+            tprint(f'No checkpoints in {self.ckpt_path}. Load skipped.')
             raise Exception("No checkpoints found.")
 
     def log(self, output):

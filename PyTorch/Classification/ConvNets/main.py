@@ -69,7 +69,7 @@ import dllogger
 
 
 def available_models():
-    models = {
+    return {
         m.name: m
         for m in [
             resnet50,
@@ -81,7 +81,6 @@ def available_models():
             efficientnet_widese_b4,
         ]
     }
-    return models
 
 
 def add_parser_arguments(parser, skip_arch=False):
@@ -184,8 +183,9 @@ def add_parser_arguments(parser, skip_arch=False):
         type=str,
         metavar="SCHEDULE",
         choices=["step", "linear", "cosine"],
-        help="Type of LR schedule: {}, {}, {}".format("step", "linear", "cosine"),
+        help='Type of LR schedule: step, linear, cosine',
     )
+
 
     parser.add_argument("--end-lr", default=0, type=float)
 

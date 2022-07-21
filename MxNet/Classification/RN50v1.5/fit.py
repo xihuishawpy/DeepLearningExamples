@@ -80,7 +80,7 @@ class PartitionSignalHandler():
         return self.should_end()
 
     def should_end(self) -> bool:
-        return bool(self.t[0] > 0)
+        return self.t[0] > 0
 
     def _signal_handler(self, signum, frame):
         self.t[0] = 1
@@ -198,7 +198,7 @@ def get_lr_scheduler(args):
 def load_model(args, model):
     file = list(glob.glob(
         f"{args.workspace}/{args.model_prefix}_*.params"))
-    if len(file) == 0:
+    if not file:
         return 0
 
     file = [x for x in sorted(file) if "best.params" not in x][-1]
@@ -207,9 +207,9 @@ def load_model(args, model):
     if epoch is None:
         return 0
 
-    epoch = int(epoch.group(1))
+    epoch = int(epoch[1])
     model.load_parameters(file)
-    logging.info('Loaded model {}'.format(file))
+    logging.info(f'Loaded model {file}')
     return epoch
 
 
@@ -353,11 +353,13 @@ def model_fit(args, net, train_data, eval_metric, optimizer,
                 (1 - label_coeffs) * ret_labels[::-1]
         else:
             ret_images = images
-            if not sparse_label_loss:
-                ret_labels = label_smoothing(
-                    labels, args.num_classes, args.label_smoothing)
-            else:
-                ret_labels = labels
+            ret_labels = (
+                labels
+                if sparse_label_loss
+                else label_smoothing(
+                    labels, args.num_classes, args.label_smoothing
+                )
+            )
 
         return ret_images, ret_labels
 
@@ -478,7 +480,7 @@ def fit(args, model, data_loader):
         amp.init()
 
     if args.seed is not None:
-        logging.info('Setting seeds to {}'.format(args.seed))
+        logging.info(f'Setting seeds to {args.seed}')
         random.seed(args.seed)
         np.random.seed(args.seed)
         mx.random.seed(args.seed)
@@ -496,11 +498,7 @@ def fit(args, model, data_loader):
     if args.test_io:
         train, val = data_loader(args, kv)
 
-        if args.test_io_mode == 'train':
-            data_iter = train
-        else:
-            data_iter = val
-
+        data_iter = train if args.test_io_mode == 'train' else val
         tic = time.time()
         for i, batch in enumerate(data_iter):
             if isinstance(batch, list):
@@ -527,7 +525,7 @@ def fit(args, model, data_loader):
     model.collect_params().reset_ctx(devs)
 
     if args.mode == 'pred':
-        logging.info('Infering image {}'.format(args.data_pred))
+        logging.info(f'Infering image {args.data_pred}')
         model_pred(args, model, data.load_image(args, args.data_pred, devs[0]))
         return
 
@@ -546,12 +544,11 @@ def fit(args, model, data_loader):
         optimizer_params['momentum'] = args.mom
 
     # evaluation metrices
-    if not args.no_metrics:
-        eval_metrics = ['accuracy']
-        eval_metrics.append(mx.metric.create(
-            'top_k_accuracy', top_k=5))
-    else:
-        eval_metrics = []
+    eval_metrics = (
+        []
+        if args.no_metrics
+        else ['accuracy', mx.metric.create('top_k_accuracy', top_k=5)]
+    )
 
     train, val = data_loader(args, kv)
     train = BenchmarkingDataIter(train, args.benchmark_iters)
@@ -604,15 +601,17 @@ def fit(args, model, data_loader):
         for epoch in range(args.num_epochs):  # loop for benchmarking
             score, duration_stats, durations = model_score(
                 args, model, val, eval_metrics, args.kv_store)
-            dllogger_data = dict(starmap(lambda key, val: (
-                'val.{}'.format(key), val), zip(*score)))
-            dllogger_data.update(
-                starmap(lambda key, val: ('val.{}'.format(key), val),
-                        duration_stats.items())
+            dllogger_data = dict(
+                starmap(lambda key, val: (f'val.{key}', val), zip(*score))
             )
+
+            dllogger_data |= starmap(
+                lambda key, val: (f'val.{key}', val), duration_stats.items()
+            )
+
             global_metrics.update_dict(dllogger_data)
             for percentile in [50, 90, 95, 99, 100]:
-                metric_name = 'val.latency_{}'.format(percentile)
+                metric_name = f'val.latency_{percentile}'
                 dllogger_data[metric_name] = np.percentile(
                     durations, percentile)
                 global_metrics.update_metric(metric_name, durations)

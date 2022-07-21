@@ -82,7 +82,12 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="Run models with given dataloader", allow_abbrev=False)
-    parser.add_argument("--metrics", help=f"Path to python module containing metrics calculator", required=True)
+    parser.add_argument(
+        "--metrics",
+        help="Path to python module containing metrics calculator",
+        required=True,
+    )
+
     parser.add_argument("--csv", help="Path to csv file", required=True)
     parser.add_argument("--dump-dir", help="Path to directory with dumped outputs (and labels)", required=True)
 
@@ -93,7 +98,7 @@ def main():
 
     args = parser.parse_args()
 
-    LOGGER.info(f"args:")
+    LOGGER.info("args:")
     for key, value in vars(args).items():
         LOGGER.info(f"    {key} = {value}")
 
@@ -105,7 +110,7 @@ def main():
     y_true = get_data(args.dump_dir, "labels")
     y_pred = get_data(args.dump_dir, "outputs")
 
-    common_keys = list({k for k in (y_true or [])} & {k for k in (y_pred or [])})
+    common_keys = list(set((y_true or [])) & set((y_pred or [])))
     for key in common_keys:
         if y_true[key].shape != y_pred[key].shape:
             LOGGER.warning(
@@ -117,8 +122,9 @@ def main():
     metrics = metrics_calculator.calc(ids=ids, x=x, y_pred=y_pred, y_real=y_true)
     metrics = {TOTAL_COLUMN_NAME: len(ids), **metrics}
 
-    metric_names_with_space = [name for name in metrics if any([c in string.whitespace for c in name])]
-    if metric_names_with_space:
+    if metric_names_with_space := [
+        name for name in metrics if any(c in string.whitespace for c in name)
+    ]:
         raise ValueError(f"Metric names shall have no spaces; Incorrect names: {', '.join(metric_names_with_space)}")
 
     csv_path = Path(args.csv)

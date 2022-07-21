@@ -63,20 +63,14 @@ def get_sample_input(dataloader, device):
 
 
 def get_model_device(torch_model):
-    if next(torch_model.parameters()).is_cuda:
-        return "cuda"
-    else:
-        return "cpu"
+    return "cuda" if next(torch_model.parameters()).is_cuda else "cpu"
 
 
 def infer_model_precision(model):
     counter = Counter()
     for param in model.parameters():
         counter[param.dtype] += 1
-    if counter[torch.float16] > 0:
-        return Precision.FP16
-    else:
-        return Precision.FP32
+    return Precision.FP16 if counter[torch.float16] > 0 else Precision.FP32
 
 
 def _get_tensor_dtypes(dataloader, precision):
@@ -200,9 +194,10 @@ class PYT2ONNXConverter(BaseConverter):
 
         import onnx  # pytype: disable=import-error
 
-        assert isinstance(model.handle, torch.jit.ScriptModule) or isinstance(
-            model.handle, torch.nn.Module
+        assert isinstance(
+            model.handle, (torch.jit.ScriptModule, torch.nn.Module)
         ), "The model must be of type 'torch.jit.ScriptModule' or 'torch.nn.Module'. Converter aborted."
+
 
         dynamic_axes = get_dynamic_axes(dataloader_fn())
 
@@ -314,9 +309,10 @@ class PyTorchRunnerSession(BaseRunnerSession):
     def __init__(self, model: Model):
         super().__init__(model)
 
-        assert isinstance(model.handle, torch.jit.ScriptModule) or isinstance(
-            model.handle, torch.nn.Module
+        assert isinstance(
+            model.handle, (torch.jit.ScriptModule, torch.nn.Module)
         ), "The model must be of type 'torch.jit.ScriptModule' or 'torch.nn.Module'. Runner aborted."
+
 
         self._model = model
         self._output_names = None

@@ -62,14 +62,14 @@ def set_input_shapes(engine, context, inputs):
         return dim is None or dim <= 0
 
     def is_shape_dynamic(shape):
-        return any([is_dimension_dynamic(dim) for dim in shape])
+        return any(is_dimension_dynamic(dim) for dim in shape)
 
     for idx, tensor in enumerate(inputs):
         if engine.is_shape_binding(idx) and is_shape_dynamic(context.get_shape(idx)):
             context.set_shape_input(idx, tensor)
         elif is_shape_dynamic(engine.get_binding_shape(idx)):
             context.set_binding_shape(idx, tensor.shape)
-    
+
     return context
 
 
@@ -91,7 +91,7 @@ def torch_dtype_to_trt(dtype):
     elif dtype == torch.float32:
         return trt.float32
     else:
-        raise TypeError('%s is not supported by tensorrt' % dtype)
+        raise TypeError(f'{dtype} is not supported by tensorrt')
 
 
 def torch_dtype_from_trt(dtype):
@@ -106,7 +106,7 @@ def torch_dtype_from_trt(dtype):
     elif dtype == trt.float32:
         return torch.float32
     else:
-        raise TypeError('%s is not supported by torch' % dtype)
+        raise TypeError(f'{dtype} is not supported by torch')
 
 
 def torch_device_to_trt(device):
@@ -115,7 +115,7 @@ def torch_device_to_trt(device):
     elif device.type == torch.device('cpu').type:
         return trt.TensorLocation.HOST
     else:
-        return TypeError('%s is not supported by tensorrt' % device)
+        return TypeError(f'{device} is not supported by tensorrt')
 
 
 def torch_device_from_trt(device):
@@ -124,7 +124,7 @@ def torch_device_from_trt(device):
     elif device == trt.TensorLocation.HOST:
         return torch.device('cpu')
     else:
-        return TypeError('%s is not supported by torch' % device)
+        return TypeError(f'{device} is not supported by torch')
 
 
 def create_inputs_from_torch(engine, inputs_torch):

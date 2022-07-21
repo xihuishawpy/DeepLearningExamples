@@ -188,7 +188,7 @@ def get_rec_iter(args, kv=None):
         batch_size = args.batch_size
 
     if args.input_layout == 'NHWC':
-        raise ValueError('ImageRecordIter cannot handle layout {}'.format(args.input_layout))
+        raise ValueError(f'ImageRecordIter cannot handle layout {args.input_layout}')
 
 
     train = DataGPUSplit(mx.io.ImageRecordIter(

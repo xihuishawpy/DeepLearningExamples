@@ -56,12 +56,10 @@ class Logger(ABC):
             if isinstance(val, Callable):
                 try:
                     _val = val()
-                    if isinstance(_val, Callable):
-                        return val.__name__
-                    return _val
+                    return val.__name__ if isinstance(_val, Callable) else _val
                 except Exception:
                     return getattr(val, "__name__", None)
-            elif isinstance(val, pathlib.Path) or isinstance(val, Enum):
+            elif isinstance(val, (pathlib.Path, Enum)):
                 return str(val)
             return val
 
@@ -74,7 +72,7 @@ class LoggerCollection(Logger):
         self.loggers = loggers
 
     def __getitem__(self, index):
-        return [logger for logger in self.loggers][index]
+        return list(self.loggers)[index]
 
     @rank_zero_only
     def log_metrics(self, metrics, step=None):

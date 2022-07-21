@@ -38,14 +38,11 @@ def format_step(step):
         return step
     s = ""
     if len(step) > 0:
-        if isinstance(step[0], Number):
-            s += "Epoch: {} ".format(step[0])
-        else:
-            s += "{} ".format(step[0])
+        s += f"Epoch: {step[0]} " if isinstance(step[0], Number) else f"{step[0]} "
     if len(step) > 1:
-        s += "Iteration: {} ".format(step[1])
+        s += f"Iteration: {step[1]} "
     if len(step) > 2:
-        s += "Validation Iteration: {} ".format(step[2])
+        s += f"Validation Iteration: {step[2]} "
     if len(step) == 0:
         s = "Summary:"
     return s
@@ -116,9 +113,11 @@ class QuantileMeter(object):
             self.n += n
 
     def get_val(self):
-        if not self.vals:
-            return None, self.n
-        return np.quantile(self.vals, self.q, interpolation="nearest"), self.n
+        return (
+            (np.quantile(self.vals, self.q, interpolation="nearest"), self.n)
+            if self.vals
+            else (None, self.n)
+        )
 
     def get_data(self):
         return self.vals, self.n
@@ -133,10 +132,7 @@ class MaxMeter(object):
         self.n = 0
 
     def record(self, val, n=1):
-        if self.max is None:
-            self.max = val
-        else:
-            self.max = max(self.max, val)
+        self.max = val if self.max is None else max(self.max, val)
         self.n = n
 
     def get_val(self):
@@ -155,10 +151,7 @@ class MinMeter(object):
         self.n = 0
 
     def record(self, val, n=1):
-        if self.min is None:
-            self.min = val
-        else:
-            self.min = max(self.min, val)
+        self.min = val if self.min is None else max(self.min, val)
         self.n = n
 
     def get_val(self):
@@ -200,14 +193,10 @@ class AverageMeter(object):
         self.val += val * n
 
     def get_val(self):
-        if self.n == 0:
-            return None, 0
-        return self.val / self.n, self.n
+        return (None, 0) if self.n == 0 else (self.val / self.n, self.n)
 
     def get_data(self):
-        if self.n == 0:
-            return None, 0
-        return self.val / self.n, self.n
+        return (None, 0) if self.n == 0 else (self.val / self.n, self.n)
 
 
 class Logger(object):
@@ -227,7 +216,7 @@ class Logger(object):
 
     def register_metric(self, metric_name, meter, verbosity=0, metadata={}):
         if self.verbose:
-            print("Registering metric: {}".format(metric_name))
+            print(f"Registering metric: {metric_name}")
         self.metrics[metric_name] = {"meter": meter, "level": verbosity}
         dllogger.metadata(metric_name, metadata)
 

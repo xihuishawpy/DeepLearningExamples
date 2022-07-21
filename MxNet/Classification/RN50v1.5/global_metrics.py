@@ -10,7 +10,7 @@ class CompositeMeter:
 
     def _validate(self, metric_name):
         if metric_name not in self.register:
-            raise ValueError('{} is not registered metric'.format(metric_name))
+            raise ValueError(f'{metric_name} is not registered metric')
 
     def update_metric(self, metric_name, value):
         self._validate(metric_name)
@@ -25,8 +25,7 @@ class CompositeMeter:
         if metric_name is not None:
             self._validate(metric_name)
             return self.register[metric_name].get()
-        res_dict = {name: metric.get() for name, metric in self.register.items()}
-        return res_dict
+        return {name: metric.get() for name, metric in self.register.items()}
 
 
 class MaxMeter:
@@ -39,10 +38,7 @@ class MaxMeter:
         self.n = 0
 
     def update(self, val):
-        if self.max is None:
-            self.max = val
-        else:
-            self.max = max(self.max, val)
+        self.max = val if self.max is None else max(self.max, val)
 
     def get(self):
         return self.max
@@ -58,10 +54,7 @@ class MinMeter:
         self.n = 0
 
     def update(self, val):
-        if self.min is None:
-            self.min = val
-        else:
-            self.min = min(self.min, val)
+        self.min = val if self.min is None else min(self.min, val)
 
     def get(self):
         return self.min

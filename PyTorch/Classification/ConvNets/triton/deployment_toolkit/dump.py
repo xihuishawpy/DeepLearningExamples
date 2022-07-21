@@ -24,8 +24,12 @@ FLUSH_THRESHOLD_B = 256 * MB2B
 
 def pad_except_batch_axis(data: np.ndarray, target_shape_with_batch_axis: Iterable[int]):
     assert all(
-        [current_size <= target_size for target_size, current_size in zip(target_shape_with_batch_axis, data.shape)]
+        current_size <= target_size
+        for target_size, current_size in zip(
+            target_shape_with_batch_axis, data.shape
+        )
     ), "target_shape should have equal or greater all dimensions comparing to data.shape"
+
     padding = [(0, 0)] + [  # (0, 0) - do not pad on batch_axis (with index 0)
         (0, target_size - current_size)
         for target_size, current_size in zip(target_shape_with_batch_axis[1:], data.shape[1:])
@@ -60,7 +64,10 @@ class NpzWriter:
 
     @property
     def cache_size(self):
-        return {name: sum([a.nbytes for a in data.values()]) for name, data in self._items_cache.items()}
+        return {
+            name: sum(a.nbytes for a in data.values())
+            for name, data in self._items_cache.items()
+        }
 
     def _append_to_cache(self, prefix, data):
         if data is None:

@@ -132,14 +132,15 @@ class Bottleneck(nn.Module):
         self.fused_se = fused_se
         if se:
             self.squeeze = (
-                SqueezeAndExcitation(
+                SqueezeAndExcitationTRT(
                     planes * expansion, se_squeeze, builder.activation()
                 )
-                if not trt
-                else SqueezeAndExcitationTRT(
+                if trt
+                else SqueezeAndExcitation(
                     planes * expansion, se_squeeze, builder.activation()
                 )
             )
+
         else:
             self.squeeze = None
 
@@ -162,11 +163,10 @@ class Bottleneck(nn.Module):
 
         if self.squeeze is None:
             out += residual
+        elif self.fused_se:
+            out = torch.addcmul(residual, out, self.squeeze(out), value=1)
         else:
-            if self.fused_se:
-                out = torch.addcmul(residual, out, self.squeeze(out), value=1)
-            else:
-                out = residual + out * self.squeeze(out)
+            out = residual + out * self.squeeze(out)
 
         out = self.relu(out)
 
@@ -327,8 +327,9 @@ class ResNet(nn.Module):
             i
             for i in range(self.num_layers)
             if "classifier" in layers
-            or any([f"layer{j+1}" in layers for j in range(i, self.num_layers)])
+            or any(f"layer{j+1}" in layers for j in range(i, self.num_layers))
         ]
+
 
         output = {}
         x = self.stem(x)
@@ -360,11 +361,7 @@ class ResNet(nn.Module):
         if stride != 1 or inplanes != planes * expansion:
             dconv = self.builder.conv1x1(inplanes, planes * expansion, stride=stride)
             dbn = self.builder.batchnorm(planes * expansion)
-            if dbn is not None:
-                downsample = nn.Sequential(dconv, dbn)
-            else:
-                downsample = dconv
-
+            downsample = nn.Sequential(dconv, dbn) if dbn is not None else dconv
         layers = []
         for i in range(blocks):
             layers.append(
